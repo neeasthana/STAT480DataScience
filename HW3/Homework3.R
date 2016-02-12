@@ -147,6 +147,9 @@ includeAttach = function(body, boundary){
 set.seed(418910)
 
 # Take approximately 1/3 of the spam and ham messages as our test spam and ham messages.
+numEmail = length(isSpam)
+numSpam = sum(isSpam)
+numHam = numEmail - numSpam
 testSpamIdx = sample(numSpam, size = floor(numSpam/3))
 testHamIdx = sample(numHam, size = floor(numHam/3))
 
@@ -219,7 +222,9 @@ accuracy = function(LLRVals, testIsSpam){
   return(correct / length(testIsSpam))
 }
 
+accuracy(testLLR, testIsSpam)
 #Old model accuracy: 0.9396662
+#New model accuracy: 0.8735558
 
 ##Q3
 #The string manipulation functions in R can be used instead of regular expression functions for finding, 
@@ -228,6 +233,16 @@ accuracy = function(LLRVals, testIsSpam){
 #nchar() which returns the number of characters in a string. Write your own version of getBoundary() 
 #(see the section called “Removing Attachments from the Message Body”) using these functions to extract 
 #the boundary string from the Content-Type. Debug your function with the messages in sampleEmail.
+
+getBoundary = function(header) {
+  boundaryIdx = grep("boundary=", header)
+  boundary = gsub('"', "", header[boundaryIdx])
+  gsub(".*boundary= *([^;]*);?.*", "\\1", boundary)
+}
+
+myGetBoundary = function(header){
+  
+}
 
 ##Q6
 #Try to improve the text cleaning in findMsgWords() of the section called “Extracting Words from a Message 
