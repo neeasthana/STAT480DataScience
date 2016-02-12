@@ -233,16 +233,22 @@ accuracy(testLLR, testIsSpam)
 #nchar() which returns the number of characters in a string. Write your own version of getBoundary() 
 #(see the section called “Removing Attachments from the Message Body”) using these functions to extract 
 #the boundary string from the Content-Type. Debug your function with the messages in sampleEmail.
-
-getBoundary = function(header) {
-  boundaryIdx = grep("boundary=", header)
-  boundary = gsub('"', "", header[boundaryIdx])
-  gsub(".*boundary= *([^;]*);?.*", "\\1", boundary)
-}
-
 myGetBoundary = function(header){
+  boundaryIdx = grep("boundary=", header)
+  line = header[boundaryIdx]
   
+  #remove all whitespace and quotes
+  line = gsub('"', "", line)
+  line = gsub(' ', "", line)
+  
+  #split string to only include portion after "boundary="
+  line = strsplit(line, "boundary=")
+  line = unlist(line)[2]
+  
+  #remove semicolon if it exists
+  line = unlist(strsplit(line, ";"))[1]
 }
+
 
 ##Q6
 #Try to improve the text cleaning in findMsgWords() of the section called “Extracting Words from a Message 
