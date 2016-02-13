@@ -17,6 +17,39 @@ fullDirNames = paste(spamPath, "messages", dirNames,
 #the set of a message's words. Try to reuse the findMsg() function and modify the dropAttach() function
 #to accept an additional parameter that indicates whether or not the words in attachments are to be extracted. 
 #Does this change improve the classification?
+includeAttach = function(body, boundary){
+  
+  bString = paste("--", boundary, sep = "")
+  bStringLocs = which(bString == body)
+  
+  # if there are fewer than 2 beginning boundary strings, 
+  # there is on attachment to drop
+  if (length(bStringLocs) <= 1) return(body)
+  
+  # do ending string processing
+  eString = paste("--", boundary, "--", sep = "")
+  eStringLoc = which(eString == body)
+  
+  # if no ending boundary string, grab contents between the first 
+  # two beginning boundary strings as the message body
+  n = length(body)
+  if (length(eStringLoc) == 0) 
+    return(body[c( (bStringLocs[1] + 1) : (bStringLocs[2] - 1), (bStringLocs[2] + 1) : n  )])
+  
+  # typical case of well-formed email with attachments
+  # grab contents between first two beginning boundary strings and 
+  # add lines after ending boundary string
+  if (eStringLoc < n) 
+    return( body[ c( (bStringLocs[1] + 1) : (bStringLocs[2] - 1), (bStringLocs[2] + 1) : (eStringLoc - 1),
+                     ( (eStringLoc + 1) : n )) ] )
+  
+  # fall through case
+  # note that the result is the same as the 
+  # length(eStringLoc) == 0 case, so code could be simplified by 
+  # dropping that case and modifying the eStringLoc < n check to 
+  # be 0 < eStringLoc < n
+  return( body[ (bStringLocs[1] + 1) : (bStringLocs[2] - 1) ])
+}
 
 splitMessage = function(msg) {
   splitPoint = match("", msg)
@@ -109,40 +142,6 @@ isSpam = rep(c(FALSE, FALSE, FALSE, TRUE, TRUE), numMsgs)
 
 # Flatten the message words into a single list of lists of message words.
 msgWordsList = unlist(msgWordsList, recursive = FALSE)
-
-includeAttach = function(body, boundary){
-  
-  bString = paste("--", boundary, sep = "")
-  bStringLocs = which(bString == body)
-  
-  # if there are fewer than 2 beginning boundary strings, 
-  # there is on attachment to drop
-  if (length(bStringLocs) <= 1) return(body)
-  
-  # do ending string processing
-  eString = paste("--", boundary, "--", sep = "")
-  eStringLoc = which(eString == body)
-  
-  # if no ending boundary string, grab contents between the first 
-  # two beginning boundary strings as the message body
-  n = length(body)
-  if (length(eStringLoc) == 0) 
-    return(body[c( (bStringLocs[1] + 1) : (bStringLocs[2] - 1), (bStringLocs[2] + 1) : n  )])
-  
-  # typical case of well-formed email with attachments
-  # grab contents between first two beginning boundary strings and 
-  # add lines after ending boundary string
-  if (eStringLoc < n) 
-    return( body[ c( (bStringLocs[1] + 1) : (bStringLocs[2] - 1), (bStringLocs[2] + 1) : (eStringLoc - 1),
-                     ( (eStringLoc + 1) : n )) ] )
-  
-  # fall through case
-  # note that the result is the same as the 
-  # length(eStringLoc) == 0 case, so code could be simplified by 
-  # dropping that case and modifying the eStringLoc < n check to 
-  # be 0 < eStringLoc < n
-  return( body[ (bStringLocs[1] + 1) : (bStringLocs[2] - 1) ])
-}
 
 # Set a particular seed, so the results will be reproducible.
 set.seed(418910)
