@@ -10,6 +10,14 @@ dirNames = list.files(path = paste(spamPath, "messages",
 fullDirNames = paste(spamPath, "messages", dirNames, 
                      sep = .Platform$file.sep)
 
+##Q2
+#In the text mining approach to detecting spam we ignored all attachments in creating the set of words 
+#belonging to a message (see the section called “Removing Attachments from the Message Body”). 
+#Write a function to extract words from any plain text or HTML attachment and include these words in 
+#the set of a message's words. Try to reuse the findMsg() function and modify the dropAttach() function
+#to accept an additional parameter that indicates whether or not the words in attachments are to be extracted. 
+#Does this change improve the classification?
+
 splitMessage = function(msg) {
   splitPoint = match("", msg)
   header = msg[1:(splitPoint-1)]
@@ -102,13 +110,6 @@ isSpam = rep(c(FALSE, FALSE, FALSE, TRUE, TRUE), numMsgs)
 # Flatten the message words into a single list of lists of message words.
 msgWordsList = unlist(msgWordsList, recursive = FALSE)
 
-##Q2
-#In the text mining approach to detecting spam we ignored all attachments in creating the set of words 
-#belonging to a message (see the section called “Removing Attachments from the Message Body”). 
-#Write a function to extract words from any plain text or HTML attachment and include these words in 
-#the set of a message's words. Try to reuse the findMsg() function and modify the dropAttach() function
-#to accept an additional parameter that indicates whether or not the words in attachments are to be extracted. 
-#Does this change improve the classification?
 includeAttach = function(body, boundary){
   
   bString = paste("--", boundary, sep = "")
@@ -257,11 +258,99 @@ myGetBoundary = function(header){
 #the stemming functions available in the text mining package tm. Incorporate this stemming process into 
 #the findMsgWords() function. Then recreate the vectors of words for all the email and see if the 
 #classification improves.
+dropAttach = function(body, boundary){
+  
+  bString = paste("--", boundary, sep = "")
+  bStringLocs = which(bString == body)
+  
+  # if there are fewer than 2 beginning boundary strings, 
+  # there is on attachment to drop
+  if (length(bStringLocs) <= 1) return(body)
+  
+  # do ending string processing
+  eString = paste("--", boundary, "--", sep = "")
+  eStringLoc = which(eString == body)
+  
+  # if no ending boundary string, grab contents between the first 
+  # two beginning boundary strings as the message body
+  if (length(eStringLoc) == 0) 
+    return(body[ (bStringLocs[1] + 1) : (bStringLocs[2] - 1)])
+  
+  # typical case of well-formed email with attachments
+  # grab contents between first two beginning boundary strings and 
+  # add lines after ending boundary string
+  n = length(body)
+  if (eStringLoc < n) 
+    return( body[ c( (bStringLocs[1] + 1) : (bStringLocs[2] - 1), 
+                     ( (eStringLoc + 1) : n )) ] )
+  
+  # fall through case
+  # note that the result is the same as the 
+  # length(eStringLoc) == 0 case, so code could be simplified by 
+  # dropping that case and modifying the eStringLoc < n check to 
+  # be 0 < eStringLoc < n
+  return( body[ (bStringLocs[1] + 1) : (bStringLocs[2] - 1) ])
+}
 
-##Q7
-#Consider the treatment of s in the text cleaning in findMsgWords() of the section called “Extracting Words
-#from a Message Body”. Notice that this function often turns a into gibberish. Should we drop s all 
-#together from the messages, or should we try to keep the as one whole “word”? Why might these alternatives
-#be better or worse than the approach taken in the section called “Extracting Words from a Message Body”? 
-#Try one of these alternatives and compare it to the approach of that section to see if it improves the 
-#classification.
+processAllWordsStemming = function(dirName, stopWords){
+  # read all files in the directory
+  fileNames = list.files(dirName, full.names = TRUE)
+  # drop files that are not email, i.e., cmds
+  notEmail = grep("cmds$", fileNames)
+  if ( length(notEmail) > 0) fileNames = fileNames[ - notEmail ]
+  
+  messages = lapply(fileNames, readLines, encoding = "latin1")
+  
+  # split header and body
+  emailSplit = lapply(messages, splitMessage)
+  # put body and header in own lists
+  bodyList = lapply(emailSplit, function(msg) msg$body)
+  headerList = lapply(emailSplit, function(msg) msg$header)
+  rm(emailSplit)
+  
+  # determine which messages have attachments
+  hasAttach = sapply(headerList, function(header) {
+    CTloc = grep("Content-Type", header)
+    if (length(CTloc) == 0) return(0)
+    multi = grep("multi", tolower(header[CTloc])) 
+    if (length(multi) == 0) return(0)
+    multi
+  })
+  
+  hasAttach = which(hasAttach > 0)
+  
+  # find boundary strings for messages with attachments
+  boundaries = sapply(headerList[hasAttach], getBoundary)
+  
+  # drop attachments from message body
+  bodyList[hasAttach] = mapply(dropAttach, bodyList[hasAttach], 
+                               boundaries, SIMPLIFY = FALSE)
+  
+  # extract words from body
+  msgWordsList = lapply(bodyList, findMsgWords, stopWords)
+  msgWordsListStemmed = stemDocument(unlist(msgWordsList))
+  invisible(msgWordsListStemmed)
+}
+
+msgWordsListStemmed = lapply(fullDirNames, processAllWordsStemming, 
+                      stopWords = stopWords) 
+
+set.seed(418910)
+
+testMsgWords = c((msgWordsListStemmed[isSpam])[testSpamIdx],
+                 (msgWordsListStemmed[!isSpam])[testHamIdx] )
+trainMsgWords = c((msgWordsListStemmed[isSpam])[ - testSpamIdx], 
+                  (msgWordsListStemmed[!isSpam])[ - testHamIdx])
+
+# Create variables indicating which testing and training messages are spam and not.
+testIsSpam = rep(c(TRUE, FALSE), 
+                 c(length(testSpamIdx), length(testHamIdx)))
+trainIsSpam = rep(c(TRUE, FALSE), 
+                  c(numSpam - length(testSpamIdx), 
+                    numHam - length(testHamIdx)))
+
+trainTable = computeFreqs(trainMsgWords, trainIsSpam)
+testLLR = sapply(testMsgWords, computeMsgLLR, trainTable)
+accuracy(testLLR, testIsSpam)
+
+#stemming accuracy: .2570603
