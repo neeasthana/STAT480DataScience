@@ -327,14 +327,32 @@ processAllWordsStemming = function(dirName, stopWords){
   
   # extract words from body
   msgWordsList = lapply(bodyList, findMsgWords, stopWords)
-  msgWordsListStemmed = stemDocument(unlist(msgWordsList))
+  msgWordsListStemmed = lapply(msgWordsList, stemDocument)
   invisible(msgWordsListStemmed)
 }
 
 msgWordsListStemmed = lapply(fullDirNames, processAllWordsStemming, 
                       stopWords = stopWords) 
 
+numMsgs = sapply(msgWordsListStemmed, length)
+numMsgs
+
+# Define isSpam based on directory the message came from.
+isSpam = rep(c(FALSE, FALSE, FALSE, TRUE, TRUE), numMsgs)
+
+# Flatten the message words into a single list of lists of message words.
+msgWordsListStemmed = unlist(msgWordsListStemmed, recursive = FALSE)
+
+# Set a particular seed, so the results will be reproducible.
 set.seed(418910)
+
+# Take approximately 1/3 of the spam and ham messages as our test spam and ham messages.
+numEmail = length(isSpam)
+numSpam = sum(isSpam)
+numHam = numEmail - numSpam
+testSpamIdx = sample(numSpam, size = floor(numSpam/3))
+testHamIdx = sample(numHam, size = floor(numHam/3))
+
 
 testMsgWords = c((msgWordsListStemmed[isSpam])[testSpamIdx],
                  (msgWordsListStemmed[!isSpam])[testHamIdx] )
