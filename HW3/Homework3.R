@@ -81,6 +81,7 @@ findMsgWords =
     # drop empty and 1 letter words
     words = words[ nchar(words) > 1]
     words = words[ !( words %in% stopWords) ]
+    
     invisible(words)
   }
 
@@ -262,6 +263,20 @@ myGetBoundary = function(header){
 #the stemming functions available in the text mining package tm. Incorporate this stemming process into 
 #the findMsgWords() function. Then recreate the vectors of words for all the email and see if the 
 #classification improves.
+findMsgWords = 
+  function(msg, stopWords) {
+    if(is.null(msg))
+      return(character())
+    
+    words = unique(unlist(strsplit(cleanText(msg), "[[:blank:]\t]+")))
+    
+    # drop empty and 1 letter words
+    words = words[ nchar(words) > 1]
+    words = words[ !( words %in% stopWords) ]
+    words = lapply(words, stemDocument)
+    invisible(words)
+  }
+
 dropAttach = function(body, boundary){
   
   bString = paste("--", boundary, sep = "")
@@ -331,8 +346,8 @@ processAllWordsStemming = function(dirName, stopWords){
                                boundaries, SIMPLIFY = FALSE)
   
   # extract words from body
-  msgWordsList = lapply(bodyList, findMsgWords, stopWords)
-  msgWordsListStemmed = lapply(msgWordsList, stemDocument)
+  msgWordsListStemmed = lapply(bodyList, findMsgWords, stopWords)
+  #msgWordsListStemmed = lapply(msgWordsList, stemDocument)
   invisible(msgWordsListStemmed)
 }
 
@@ -375,4 +390,4 @@ trainTable = computeFreqs(trainMsgWords, trainIsSpam)
 testLLR = sapply(testMsgWords, computeMsgLLR, trainTable)
 accuracy(testLLR, testIsSpam)
 
-#stemming accuracy: .2570603
+#stemming accuracy: 0.9326059
