@@ -234,19 +234,24 @@ accuracy(testLLR, testIsSpam)
 #(see the section called “Removing Attachments from the Message Body”) using these functions to extract 
 #the boundary string from the Content-Type. Debug your function with the messages in sampleEmail.
 myGetBoundary = function(header){
-  boundaryIdx = grep("boundary=", header)
-  line = header[boundaryIdx]
+  #split all lines on boundary= and see which ones have a split that is greater than 1 (meaning that the boundary is contained on that line)
+  splits <- strsplit(header, "boundary=")
+  line = ""
+  for(i in splits){
+    if(length(i) > 1){
+      line = i
+    }
+  }
+  
+  line = line[2]
   
   #remove all whitespace and quotes
   line = gsub('"', "", line)
   line = gsub(' ', "", line)
   
-  #split string to only include portion after "boundary="
-  line = strsplit(line, "boundary=")
-  line = unlist(line)[2]
-  
   #remove semicolon if it exists
   line = unlist(strsplit(line, ";"))[1]
+  return(line)
 }
 
 
