@@ -1,0 +1,18 @@
+#Exercise 1
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
+  -files /home/host-data/STAT480DataScience/HW5/min_temperature_map.py,\
+/home/host-data/STAT480DataScience/HW5/min_temperature_reduce.py \
+  -input input/ncdc/all \
+  -output outputs/HW5Exercise1 \
+  -mapper "/home/host-data/STAT480DataScience/HW5/min_temperature_map.py" \
+  -reducer "/home/host-data/STAT480DataScience/HW5/min_temperature_reduce.py" 
+
+#Exercise 2
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
+  -files /home/host-data/STAT480DataScience/HW5/num_trusted_map.py,\
+/home/host-data/STAT480DataScience/HW5/num_trusted_reduce.py \
+  -input input/ncdc/all \
+  -output outputs/HW5Exercise2 \
+  -mapper "/home/host-data/STAT480DataScience/HW5/num_trusted_map.py" \
+  -reducer "/home/host-data/STAT480DataScience/HW5/num_trusted_reduce.py"
+
