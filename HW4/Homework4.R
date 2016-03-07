@@ -506,7 +506,7 @@ isRe3 = function(msg) {
     
 }
 
-emailStruct = mapply(processAllEmail, fullDirNames, isSpam = rep( c(FALSE, TRUE), 3:2)) 
+emailStruct = mapply(processAllEmail, fullDirNames, isSpam = rep( c(FALSE, TRUE), 3:2))
 emailStruct = unlist(emailStruct, recursive = FALSE)
 
 length(lapply(emailStruct, isRe) == TRUE)
