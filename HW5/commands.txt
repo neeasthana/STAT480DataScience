@@ -16,3 +16,11 @@ hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
   -mapper "/home/host-data/STAT480DataScience/HW5/num_trusted_map.py" \
   -reducer "/home/host-data/STAT480DataScience/HW5/num_trusted_reduce.py"
 
+#Exercise 3
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
+  -files /home/host-data/STAT480DataScience/HW5/min_max_trusted_map.py,\
+/home/host-data/STAT480DataScience/HW5/min_max_trusted_reduce.py \
+  -input input/ncdc/all \
+  -output outputs/HW5Exercise3 \
+  -mapper "/home/host-data/STAT480DataScience/HW5/min_max_trusted_map.py" \
+  -reducer "/home/host-data/STAT480DataScience/HW5/min_max_trusted_reduce.py"
