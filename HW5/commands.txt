@@ -24,3 +24,13 @@ hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
   -output outputs/HW5Exercise3 \
   -mapper "/home/host-data/STAT480DataScience/HW5/min_max_trusted_map.py" \
   -reducer "/home/host-data/STAT480DataScience/HW5/min_max_trusted_reduce.py"
+
+#Exercise 4
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
+  -files /home/host-data/STAT480DataScience/HW5/mean_temperature_map.py,\
+/home/host-data/STAT480DataScience/HW5/mean_temperature_reduce.py \
+  -input input/ncdc/all \
+  -output outputs/HW5Exercise4 \
+  -mapper "/home/host-data/STAT480DataScience/HW5/mean_temperature_map.py" \
+  -reducer "/home/host-data/STAT480DataScience/HW5/mean_temperature_reduce.py"
+
