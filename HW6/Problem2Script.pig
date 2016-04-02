@@ -14,4 +14,8 @@ GROUPED = GROUP FILTERED BY $2;
 
 /*Create result	table*/
 RESULT = FOREACH GROUPED GENERATE group, COUNT(FILTERED.RAW_STATIONS::wban), MAX(FILTERED.RAW_TEMPS::temp), MIN(FILTERED.RAW_TEMPS::temp);
+
+/*Store and print results*/
+STORE RESULT INTO 'Problem2Result';
 DUMP RESULT;
+

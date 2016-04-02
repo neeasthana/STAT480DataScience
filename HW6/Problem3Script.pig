@@ -14,4 +14,7 @@ YEAR = GROUP TURKU by TEMPS::year;
 
 /*Generate the result*/
 RESULT = FOREACH YEAR GENERATE group, MIN(TURKU.TEMPS::temp), MAX(TURKU.TEMPS::temp);
+
+/*Store and print results*/
+STORE RESULT INTO 'Problem3Result';
 DUMP RESULT;
