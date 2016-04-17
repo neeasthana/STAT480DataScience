@@ -1,0 +1,2 @@
+CREATE VIEW average AS SELECT market, ticker, AVG(dividend) FROM dividends GROUP BY market, ticker;
+SELECT * FROM average LIMIT 5;

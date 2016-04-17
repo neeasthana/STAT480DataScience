@@ -1,0 +1,8 @@
+CREATE TABLE dividends (market STRING, ticker STRING, date STRING, dividend DOUBLE)
+ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY ',';
+
+LOAD DATA LOCAL INPATH '/home/host-data/STAT480DataScience/HW7/dividends.cs'v
+OVERWRITE INTO TABLE dividends;
+
+SELECT * FROM dividends LIMIT 10;

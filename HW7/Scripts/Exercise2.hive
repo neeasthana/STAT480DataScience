@@ -1,0 +1,2 @@
+CREATE VIEW apple AS SELECT * FROM dividends WHERE ticker == "AAPL";
+SELECT * FROM apple LIMIT 5;

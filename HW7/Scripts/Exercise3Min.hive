@@ -1,0 +1,1 @@
+SELECT apple.ticker, apple.date, apple.dividend FROM apple JOIN (SELECT MIN(dividend) m FROM apple) s WHERE s.m=apple.dividend;
