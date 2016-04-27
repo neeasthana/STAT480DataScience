@@ -3,6 +3,9 @@ title: "Homework 8 Report"
 output: html_document
 ---
 
+##Neeraj Asthana (nasthan2)
+
+
 ```{r, results="hide"}
 library(dplyr)
 library(ggplot2movies)
@@ -114,4 +117,23 @@ kdedata <- ggplot2movies::movies[,c("length", "rating")]
 kdedata <- kdedata[kdedata[,"length"] <= 180,]
 ```
 
+Created specificed "kdedata" dataset.
+
 ###Exercise 3b
+
+```{r}
+smoothScatter(kdedata[,c(1,2)], nrpoints=0)
+
+band<-function(x)
+{
+  r <- quantile(x, c(0.25, 0.75))
+  h <- (r[2] - r[1])/1.34
+  4 * 1.06 * min(sqrt(var(x)), h) * length(x)^(-1/5)
+}
+
+h <- c(band(kdedata$length), band(kdedata$rating))
+fit = kde2d(kdedata$length, kdedata$rating, h = h)
+contour(fit, col = topo.colors(20))
+```
+
+Since the kernel density plot matches the smoothScatter well, I believe that my scales are well chosen. My scale values was 9.5136726 for the length and 0.7047165 for the rating (found using the band function in class). The density estimation tells us that most movies have a length between 80 and 1115 minutes and a rating a between 4 and 8. There is also a large density of movies that are 10 to 30 minutes in length and have a rating between 5 and 8. In general most movies seem to be 90 minutes in length and have a rating of 6. 
