@@ -1,6 +1,7 @@
 library(dplyr)
 library(ggplot2movies)
 library(treemap)
+library(MASS)
 
 newdata<-ggplot2movies::movies
 newdata["rating"]<-round(newdata["rating"])
@@ -10,7 +11,7 @@ newdata %>%
   tally %>%
   ungroup -> mpaaratings
 
-##Problem 1
+##Exercise 1
 treemap(mpaaratings,
         index=c("mpaa"),
         vSize="n",
@@ -36,7 +37,51 @@ treemap(mpaaratings,
         type="value")
 
 
-##Problem 2
 
 
-##Problem 3
+
+##Exercise 2
+newdata %>% 
+  group_by(year, rating) %>% 
+  tally() -> dat
+
+my <- data.frame(table(newdata$year, newdata$rating))
+
+streamgraph(dat, "rating", "n", "year") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "year", tick_interval = 10, tick_format = "%Y")
+
+
+
+newdata %>% 
+  group_by(year, mpaa) %>% 
+  mutate(count = n())-> dat2
+
+streamgraph(dat2, "mpaa", "count", "year") %>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x(tick_units = "year", tick_interval = 10, tick_format = "%Y")
+
+
+
+
+
+
+
+
+
+##Exercise 3
+##a
+kdedata <- ggplot2movies::movies[,c("length", "rating")]
+kdedata <- kdedata[kdedata[,"length"] <= 180,]
+
+##b
+band<-function(x)
+{
+  r <- quantile(x, c(0.25, 0.75))
+  h <- (r[2] - r[1])/1.34
+  4 * 1.06 * min(sqrt(var(x)), h) * length(x)^(-1/5)
+}
+
+h <- c(band(kdedata$length), band(kdedata$rating))
+fit = kde2d(kdedata$length, kdedata$rating, h = h)
+contour(fit, col = topo.colors(10))
