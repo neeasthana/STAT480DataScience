@@ -3,7 +3,7 @@ title: "Homework 8 Report"
 output: html_document
 ---
 
-```{r}
+```{r, results="hide"}
 library(dplyr)
 library(ggplot2movies)
 library(treemap)
@@ -20,15 +20,7 @@ newdata %>%
 
 ##Exercise 1
 
-You can also embed plots, for example:
-
-```{r}
-treemap(mpaaratings,
-        index=c("mpaa"),
-        vSize="n",
-        vColor = "n",
-        type="value")
-```
+###Proportions of IMDB rating values:
 
 ```{r}
 treemap(mpaaratings,
@@ -38,13 +30,21 @@ treemap(mpaaratings,
         type="value")
 ```
 
+Most of the movies in newdata have IMDB ratings of 6 and are therefore the most common. There is a very high relative proportion of movies that are rated 6 compared to the other ratings. The next largest rating group is 7. The next highest relative proportions of movies respectively are 5, 8, 4, 3, 9, 2, and 10. Lastly, the least relative proportion of movies have an IMDB rating of 1 and are therefore the least common. Therefore, in general most movies have an IMDB value between 4 and 8 as there is a relatively high proportion of these ratings. In general mot movies do not have an IMDB rating equal to or above a 9 or equal to or below a 3. Therefore, movies tend to not generally be very bad (1,2,3) or extremely good (9,10). 
+
+###Proportions of MPAA rating values:
+
 ```{r}
 treemap(mpaaratings,
-        index=c("rating", "mpaa"),
+        index=c("mpaa"),
         vSize="n",
         vColor = "n",
         type="value")
 ```
+
+Most of the movies in newdata have MPAA ratings that are uncategorized and are therefore the most common. There is a very high relative proportion of movies that are uncategorized compared to the other ratings. The next largest group is the “R” rated movies which have a much larger relative proportion that “PG-13”, “PG”, and, “NC-17”. “R” rated movies are followed by “PG-13” movies which are then followed by “PG” rated movies. Lastly, the least relative proportion of movies have an MPAA rating of “NC-17” and are therefore the least common.
+
+###Proportion of IMDB ratings within each MPAA rating group:
 
 ```{r}
 treemap(mpaaratings,
@@ -54,6 +54,27 @@ treemap(mpaaratings,
         type="value")
 ```
 
+Movies with an MPAA rating group of “Uncategorized” have the most proportion of IMDB ratings of 6 (which is the most common), followed by 7, 5, 4, 8, 3, 9, 2, and 10 respectively. The least for the “uncategorized” group is 1 (which is the least common. Movies with an MPAA rating group of “R” have the most proportion of IMDB ratings of 6 (which is the most common), followed by 5, 7, 4, 3, 8, and 2 respectively. The least for the “R” rated group is between 1, 9, and 10 which are not visible on the treemap (these are the least common). Movies with an MPAA rating group of “PG-13” have the most proportion of IMDB ratings of 6 (which is the most common), followed by 5, 7, 4, 8, 3, and 2 respectively. The least for the “PG-13” rated group is between 1, 9, and 10 which are not visible on the treemap (these are the least common). Movies with an MPAA rating group of “PG” have the most proportion of IMDB ratings of 6 (which is the most common), followed by 5, 7, 4, 8, 3, and 2 respectively. The least for the “PG” rated group is between 1, 9, and 10 which are not visible on the treemap (these are the least common). Movies with an MPAA rating group of “NC-17” are not even visible on the treemap. Most movies have an MPAA rating of “uncategorized” with IMDB ratings between 4 and 8. In general the IMDB ratings do not greatly differ among MPAA rating groups with the highest proportions of movies having an IMDB rating between 4 and 8 and lower proportions for the other rating values. 
+
+###Proportion of MPAA rating group for each IMDB rating value:
+
+```{r}
+treemap(mpaaratings,
+        index=c("rating", "mpaa"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+In general, proportions of MPAA ratings do not change across IMDB rating groups. The trend is similar across all IMDB rating groups as most of the groups have the largest proportion being uncategorized, the second largest being “R” rated movies, the third largest being “PG-13” rated movies, and the fourth largest being “PG” rated movies, and the smallest being “NC-17” rated movies. IMDB ratings of 1, 9, and 10 have very small proportions of ratings that are not uncategorized and therefore these other categories are not visible on the treemap. 
+
 ##Exercise 2
+
+```{r, results="hide"}
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+load_pkgs = c(load_pkgs, git_pkgs_load)
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+```
 
 ##Exercise 3
