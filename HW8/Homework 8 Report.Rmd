@@ -77,4 +77,41 @@ load_pkgs = c(load_pkgs, git_pkgs_load)
 pkgs_loaded = lapply(load_pkgs, require, character.only=T)
 ```
 
+###Exercise 2a
+
+```{r}
+newdata %>% 
+  group_by(year, rating) %>% 
+  tally() -> dat
+
+streamgraph(dat, "rating", "n", "year") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "year", tick_interval = 10, tick_format = "%Y")
+```
+
+The plot is included in the Results folder under the label “Exercise2a.html”. In general we can see a dramatic increase in the number of movies created over the years. From 1893 to 1930, relatively few movies were made, however, there is a dramatic increase in the number of movies made and in 2003 a total of 2158 movies were made (largest). Over the years there appears to be large proportions of movies made that have an IMDB rating between a 3 and an 8 (around the same proportion each year with slight fluctuations but not significant). However, there appears to be relatively small proportions of movies that have an IMDB rating below 3 or above 10 (around the same proportion each year with slight fluctuations but not significant). 
+
+###Exercise 2b
+
+```{r}
+newdata %>% 
+  group_by(year, mpaa) %>% 
+  tally -> dat2
+
+streamgraph(dat2, "mpaa", "n", "year") %>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x(tick_units = "year", tick_interval = 10, tick_format = "%Y")
+```
+
+The plot is included in the Results folder under the label “Exercise2b.html”. In general we can see a dramatic increase in the number of movies created over the years. From 1893 to 1930, relatively few movies were made, however, there is a dramatic increase in the number of movies made and in 2003 a total of 2158 movies were made (largest). Additionally, over the years we can see that there is a much higher proportion of "Uncategorized"" movies comparedd to other MPAA ratings ("R", "PG-13", "PG", "NC-17") for each of the years. It appears as though the MPAA ratings were not established till the 1960's as all of the ratings other than "Uncategorized" grow in proportion after this time. There is also a dramatic dip in the number of "Uncategorized" movies in the early 1990's (drop from 1105 to 842). There is also a dramatic increase in the number of "R" rated movies during this same time period (incrase from 71 to 293). It appears that during this time, MPAA ratings began being more enforced. 
+
 ##Exercise 3
+
+###Exercise 3a
+
+```{r}
+kdedata <- ggplot2movies::movies[,c("length", "rating")]
+kdedata <- kdedata[kdedata[,"length"] <= 180,]
+```
+
+###Exercise 3b
