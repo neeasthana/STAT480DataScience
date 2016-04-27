@@ -3,6 +3,12 @@ library(ggplot2movies)
 library(treemap)
 library(MASS)
 
+#STREAM GRAPHS
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+load_pkgs = c(load_pkgs, git_pkgs_load)
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
 newdata<-ggplot2movies::movies
 newdata["rating"]<-round(newdata["rating"])
 
@@ -45,8 +51,6 @@ newdata %>%
   group_by(year, rating) %>% 
   tally() -> dat
 
-my <- data.frame(table(newdata$year, newdata$rating))
-
 streamgraph(dat, "rating", "n", "year") %>%
   sg_fill_brewer("Spectral") %>%
   sg_axis_x(tick_units = "year", tick_interval = 10, tick_format = "%Y")
@@ -55,9 +59,9 @@ streamgraph(dat, "rating", "n", "year") %>%
 
 newdata %>% 
   group_by(year, mpaa) %>% 
-  mutate(count = n())-> dat2
+  tally -> dat2
 
-streamgraph(dat2, "mpaa", "count", "year") %>%
+streamgraph(dat2, "mpaa", "n", "year") %>%
   sg_fill_brewer("PuOr") %>%
   sg_axis_x(tick_units = "year", tick_interval = 10, tick_format = "%Y")
 

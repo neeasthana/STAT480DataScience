@@ -1,0 +1,59 @@
+---
+title: "Homework 8 Report"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(ggplot2movies)
+library(treemap)
+library(MASS)
+
+newdata<-ggplot2movies::movies
+newdata["rating"]<-round(newdata["rating"])
+
+newdata %>%
+  group_by(rating, mpaa) %>%
+  tally %>%
+  ungroup -> mpaaratings
+```
+
+##Exercise 1
+
+You can also embed plots, for example:
+
+```{r}
+treemap(mpaaratings,
+        index=c("mpaa"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+```{r}
+treemap(mpaaratings,
+        index=c("rating"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+```{r}
+treemap(mpaaratings,
+        index=c("rating", "mpaa"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+```{r}
+treemap(mpaaratings,
+        index=c("mpaa", "rating"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+##Exercise 2
+
+##Exercise 3
