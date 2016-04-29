@@ -1,0 +1,81 @@
+---
+title: "GroupProject"
+author: "Neeraj Asthana"
+date: "4/29/2016"
+output: html_document
+---
+
+```{r, results="hide"}
+library(dplyr)
+library(treemap)
+library(MASS)
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+load_pkgs = c(load_pkgs, git_pkgs_load)
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+```
+
+Reading data:
+
+```{r}
+setwd("/home/student/container-data/STAT480DataScience/GroupProject")
+data <- read.csv("airlines.csv", header = TRUE)
+
+cancelled <- data[,"Cancelled"] == 1
+cancel <- data[cancelled,]
+
+dim(cancel)[1]/dim(data)[1]
+```
+
+
+##TreeMaps
+
+Cancellations by Month:
+
+```{r}
+cancel %>% 
+  group_by(Month) %>% 
+  tally() -> month
+
+treemap(month,
+        index=c("Month"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+Cancellations by Day of the Week:
+
+```{r}
+cancel %>% 
+  group_by(DayOfWeek) %>% 
+  tally() -> day
+
+treemap(day,
+        index=c("DayOfWeek"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+##Stream Graphs
+
+```{r}
+cancel %>%
+  group_by(Year, Month, UniqueCarrier) %>% 
+  tally() %>%
+  ungroup -> dat
+
+dat$Month <- paste(dat$Year,dat$Month,"01",sep="-" )
+
+streamgraph(dat, "UniqueCarrier", "n", "Month") %>%
+  sg_fill_brewer("Spectral")
+```
+
+
+##US Maps
+
+```{r}
+locations <- union(unique(data[,"Dest"]), unique(data[,"Origin"]))
+
+```
