@@ -24,13 +24,13 @@ data <- read.csv("airlines.csv", header = TRUE)
 cancelled <- data[,"Cancelled"] == 1
 cancel <- data[cancelled,]
 
-dim(cancel)[1]/dim(data)[1]
+print(dim(cancel)[1]/dim(data)[1])
 ```
 
 
 ##TreeMaps
 
-Cancellations by Month:
+###Cancellations by Month:
 
 ```{r}
 cancel %>% 
@@ -44,7 +44,9 @@ treemap(month,
         type="value")
 ```
 
-Cancellations by Day of the Week:
+It seems that most cancellations happen in the month of January followed by the month of December. This makes sense as many major snow storms happen during these months. The least number of cancellations happen in the months of March, April, October, and November. 
+
+###Cancellations by Day of the Week:
 
 ```{r}
 cancel %>% 
@@ -57,6 +59,43 @@ treemap(day,
         vColor = "n",
         type="value")
 ```
+
+###Cancellations by Carrier:
+
+```{r}
+cancel %>% 
+  group_by(UniqueCarrier) %>% 
+  tally() -> carrier
+
+treemap(carrier,
+        index=c("UniqueCarrier"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+###Cancellations by Carrier Proportions :
+
+```{r}
+cancel %>% 
+  group_by(UniqueCarrier) %>% 
+  tally() -> carrier
+
+data %>% 
+  group_by(UniqueCarrier) %>% 
+  tally() -> totalcarrier
+
+proportion <- carrier
+proportion[,"n"] <- proportion[,"n"]/totalcarrier[,"n"]
+
+treemap(proportion,
+        index=c("UniqueCarrier"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+United Airlines has the highest proportion of cancelled flights at a rate around 4.086%. SouthWest(WN) has the lowest proportion of cancelled flights at a rate around 0.943%. 
 
 ##Stream Graphs
 
@@ -72,10 +111,83 @@ streamgraph(dat, "UniqueCarrier", "n", "Month") %>%
   sg_fill_brewer("Spectral")
 ```
 
+Large spikes in January 1999, January 2000, and December 2000.
 
-##US Maps
+###Interesting peaks in Januray 1999
 
 ```{r}
-locations <- union(unique(data[,"Dest"]), unique(data[,"Origin"]))
+jan2000 <- cancel[cancel$Year == 1999 & cancel$Month == 1,]
+
+jan2000 %>%
+  group_by(DayofMonth, UniqueCarrier) %>% 
+  tally() %>%
+  ungroup -> groupjan2000
+
+groupjan2000$DayofMonth <- paste("2000","1",groupjan2000$DayofMonth,sep="-" )
+
+streamgraph(groupjan2000, "UniqueCarrier", "n", "DayofMonth") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "day", tick_interval = 1, tick_format = "%d")
+```
+
+
+###Interesting peaks in Januray 2000
+
+```{r}
+jan2000 <- cancel[cancel$Year == 2000 & cancel$Month == 1,]
+
+jan2000 %>%
+  group_by(DayofMonth, UniqueCarrier) %>% 
+  tally() %>%
+  ungroup -> groupjan2000
+
+groupjan2000$DayofMonth <- paste("2000","1",groupjan2000$DayofMonth,sep="-" )
+
+streamgraph(groupjan2000, "UniqueCarrier", "n", "DayofMonth") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "day", tick_interval = 1, tick_format = "%d")
+```
+
+There is a huge spike in the number of delays on January 25th, 2000. 1377 US Airways flights were cancelled and 689 Delta flights were cancelled. There was probably a very large snow storm on this day. 
+
+###Interesting peaks in December 2000
+
+```{r}
+dec2000 <- cancel[cancel$Year == 2000 & cancel$Month == 12,]
+
+dec2000 %>%
+  group_by(DayofMonth, UniqueCarrier) %>% 
+  tally() %>%
+  ungroup -> groupdec2000
+
+groupdec2000$DayofMonth <- paste("2000","1",groupdec2000$DayofMonth,sep="-" )
+
+streamgraph(groupdec2000, "UniqueCarrier", "n", "DayofMonth") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "day", tick_interval = 1, tick_format = "%d")
+```
+
+There is a huge spike in the number of delays on December 11th-13th, 2000. There was probably a very large snow storm on these days. 
+
+###Cancellations by origin airpots
+
+```{r}
+cancel %>%
+  group_by(Year, Month, Dest) %>% 
+  tally() -> origin
+
+origin$Month <- paste(origin$Year,origin$Month,"01",sep="-" )
+
+streamgraph(origin, "Dest", "n", "Month") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "month", tick_interval = 1, tick_format = "%m")
+```
+
+##Classifier
+
+Variables: Month, DayofMonth, CRSDepTime, CRSArrTime, UniqueCarrier, FlightNum, TailNum, Origin, Dest, Distance
+
+
+```{r}
 
 ```
