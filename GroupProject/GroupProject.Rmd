@@ -199,15 +199,60 @@ streamgraph(groupdec2000, "UniqueCarrier", "n", "DayofMonth") %>%
 
 There is a huge spike in the number of delays on December 11th-13th, 2000 and a large spike on the 30th of December. There was probably a very large snow storm on these days. There is not much of an explanation for the large spike from december 11th to the 13th, however, a large nor'easter struck the east coast of the United States on December 30th 2000 causing many cancellations at airports. Delta (DL) had a particularly large number of cancellations (672 cancellations) on December 30th. 
 
-##Classifier
-
-Variables: Month, DayofMonth, CRSDepTime, CRSArrTime, UniqueCarrier, FlightNum, TailNum, Origin, Dest, Distance
-
+#### package prepare
 
 ```{r}
 
+inst_pkgs = load_pkgs =  c("streamR","ROAuth","maps","map_data",
+                           "ggplot2", "grid","scales")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+plot.tweets = function(map, points, vals){
+  # Initialize ggplot object with map data
+  mapd = ggplot(map) +
+    # Add the map data
+    geom_map(aes(map_id = region), map = map, fill = "white", color = "grey20", size = 0.25) + 
+    # Set map limits
+    expand_limits(x = map$long, y = map$lat) + 
+    # Add a theme  
+    theme(axis.line = element_blank(), axis.text = element_blank(), axis.ticks = element_blank(), 
+          axis.title = element_blank(), panel.background = element_blank(), panel.border = element_blank(), 
+          panel.grid.major = element_blank(), plot.background = element_blank(), 
+          plot.margin = unit(0 * c(-1.5, -1.5, -1.5, -1.5), "lines")) + 
+    
+    # Add points
+    geom_point(data = points, aes(x = x, y = y), size = 3, alpha = 1/5, color = vals)
+  
+  # Graph ggplot2 object
+  print(mapd)
+}
 ```
 
+
+```{r}
+comb %>%
+  group_by(Origin) %>% 
+  tally() -> city
+
+cities <- merge(city,airports, by.x = "Origin", "iata")[,c("long", "lat", "n")]
+
+cs<- cities[order(cities$n,decreasing = T),]
+
+names(cs) <- c("x","y","z")
+
+locs <- cs[,1:2]
+values <- cs$z
+
+usa.map.data = map_data("usa")
+
+# Calling the function to plot the data
+plot.tweets(usa.map.data, locs, values)
+
+```
 
 ##References
 
