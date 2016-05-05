@@ -107,6 +107,27 @@ To gain more insight on a carrier's service and liklihood of cancellation, I als
 
 ##Stream Graphs
 
+###Cancellations by state
+
+```{r}
+airports <- read.csv("airports.csv")
+comb <- merge(cancel,airports,by.x = "Origin",by.y = "iata")
+
+comb %>%
+  group_by(Year, Month, state) %>% 
+  tally() -> origin
+
+origin$Month <- paste(origin$Year,origin$Month,"01",sep="-" )
+
+streamgraph(origin, "state", "n", "Month") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "month", tick_interval = 1, tick_format = "%m")
+```
+
+This is a stream graph of the number of cancellations by each state. In general the states of Illinois, Georgia, California, New York, and Texas had the largest number of delays. This makes sense as these states house the largest airports in the country so they will have the most cancellations because they have the most flights going in and out of them. 
+
+###Cancellations by Carrier
+
 ```{r}
 cancel %>%
   group_by(Year, Month, UniqueCarrier) %>% 
@@ -157,7 +178,7 @@ streamgraph(groupjan2000, "UniqueCarrier", "n", "DayofMonth") %>%
   sg_axis_x(tick_units = "day", tick_interval = 1, tick_format = "%d")
 ```
 
-There is a huge spike in the number of delays on January 25th, 2000. 1377 US Airways flights were cancelled, 689 Delta flights, and 586 American Airlines flights were cancelled on this particular day. There was probably a very large snow storm on this day. According to a Wikipedia article, there was a particular powerful and surprise snowstorm that struck North Carolina and Virginia on this day. There was over 20 inches of snow at the airport at Raleigh, NC alone probably causing many of the cancellations notes in this stream graph. 
+There is a huge spike in the number of delays on January 25th, 2000. 1377 US Airways flights were cancelled, 689 Delta flights, and 586 American Airlines flights were cancelled on this particular day. There was probably a very large snow storm on this day. According to a Wikipedia article, there was a particular powerful and surprise snowstorm that struck North Carolina and Virginia on this day. There was over 20 inches of snow at the airport at Raleigh, NC alone probably causing many of the cancellations notes in this stream graph. We can also see this in the Stream graph that shows number of cancellations by state and month. During January of 2000 there were 1595 flights cancelled from North Carolina and 1839 flights were cancelled from Virginia, both of which are much higher than usual for those states during other months. 
 
 ###Interesting peaks in December 2000
 
@@ -177,25 +198,6 @@ streamgraph(groupdec2000, "UniqueCarrier", "n", "DayofMonth") %>%
 ```
 
 There is a huge spike in the number of delays on December 11th-13th, 2000 and a large spike on the 30th of December. There was probably a very large snow storm on these days. There is not much of an explanation for the large spike from december 11th to the 13th, however, a large nor'easter struck the east coast of the United States on December 30th 2000 causing many cancellations at airports. Delta (DL) had a particularly large number of cancellations (672 cancellations) on December 30th. 
-
-###Cancellations by state
-
-```{r}
-airports <- read.csv("airports.csv")
-comb <- merge(cancel,airports,by.x = "Origin",by.y = "iata")
-
-comb %>%
-  group_by(Year, Month, state) %>% 
-  tally() -> origin
-
-origin$Month <- paste(origin$Year,origin$Month,"01",sep="-" )
-
-streamgraph(origin, "state", "n", "Month") %>%
-  sg_fill_brewer("Spectral") %>%
-  sg_axis_x(tick_units = "month", tick_interval = 1, tick_format = "%m")
-```
-
-This is a stream graph of the number of cancellations by each state. In general 
 
 ##Classifier
 
