@@ -1,0 +1,265 @@
+---
+title: "GroupProject"
+author: "Neeraj Asthana"
+date: "4/29/2016"
+output: html_document
+---
+
+```{r, results="hide"}
+library(dplyr)
+library(treemap)
+library(MASS)
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+load_pkgs = c(load_pkgs, git_pkgs_load)
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+```
+
+Reading data:
+
+```{r}
+setwd("/home/student/container-data/STAT480DataScience/GroupProject")
+#air = fread('airlines.csv')
+#air <- as.data.frame(air)
+#save(air, file = 'air.RDdata')
+load('air.RDdata')
+
+#data <- read.csv("airlines.csv", header = TRUE)
+data <- air
+
+cancelled <- data[,"Cancelled"] == 1
+cancel <- data[cancelled,]
+
+print(dim(cancel)[1]/dim(data)[1])
+```
+
+A total of 3% of all flights in the dataset from 1999 to 2000 were cancelled. This is a much higher number than we would have expected. Throughout this portion of the report, we will analyze the cancelled flights to see if we can notice any trends or outlying features of the data. 
+
+
+##TreeMaps
+
+###Cancellations by Month:
+
+```{r}
+cancel %>% 
+  group_by(Month) %>% 
+  tally() -> month
+
+treemap(month,
+        index=c("Month"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+From this treemap, it appears that most cancellations happen in the month of January followed by the month of December. This makes sense as many major snow storms happen during these months. I will specifically further explore the months of January 1999, January 2000, and December 2000 as these month had major snowstorms according to historical weather data. The least number of cancellations happen in the months of March, April, October, and November. 
+
+###Cancellations by Day of the Week:
+
+```{r}
+cancel %>% 
+  group_by(DayOfWeek) %>% 
+  tally() -> day
+
+treemap(day,
+        index=c("DayOfWeek"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+From this treemap, it seems that most delays happen on Mondays through Thursday and the smallest amount of delays happen on Sunday. This trend seems to exist due to the fact that there are more flights on Mondays through Thursday compared to Sunday, so naturally there will be differences in the number of cancellations. 
+
+###Cancellations by Carrier:
+
+```{r}
+cancel %>% 
+  group_by(UniqueCarrier) %>% 
+  tally() -> carrier
+
+treemap(carrier,
+        index=c("UniqueCarrier"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+The cancellations treemap by Carrier demonstrates that United Airlines (UA) has the most cancellations in this dataset with a total of 71518 cancellations. Aloha Airlines (AQ) has the least number of cancellations with a total of 173 cancellations between 1999 and 2000. This seems to make sense as there are not many Aloha Airlines flights compared to many of the other major airlines. 
+
+###Cancellations by Carrier Proportions :
+
+```{r}
+data %>% 
+  group_by(UniqueCarrier) %>% 
+  tally() -> totalcarrier
+
+proportion <- carrier
+proportion[,"n"] <- proportion[,"n"]/totalcarrier[,"n"]
+
+treemap(proportion,
+        index=c("UniqueCarrier"),
+        vSize="n",
+        vColor = "n",
+        type="value")
+```
+
+To gain more insight on a carrier's service and liklihood of cancellation, I also made a treemap on the proportion of cancellations by carrier. United Airlines has the highest proportion of cancelled flights at a rate around 4.086%. SouthWest(WN) has the lowest proportion of cancelled flights at a rate around 0.943% during the years of 1999 and 2000. This seems to suggest that Southwest is more reliable (less likely to have a cancellation) than United Airlines. 
+
+##Stream Graphs
+
+###Cancellations by state
+
+```{r}
+airports <- read.csv("airports.csv")
+comb <- merge(cancel,airports,by.x = "Origin",by.y = "iata")
+
+comb %>%
+  group_by(Year, Month, state) %>% 
+  tally() -> origin
+
+origin$Month <- paste(origin$Year,origin$Month,"01",sep="-" )
+
+streamgraph(origin, "state", "n", "Month") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "month", tick_interval = 1, tick_format = "%m")
+```
+
+This is a stream graph of the number of cancellations by each state. In general the states of Illinois, Georgia, California, New York, and Texas had the largest number of delays. This makes sense as these states house the largest airports in the country so they will have the most cancellations because they have the most flights going in and out of them. 
+
+###Cancellations by Carrier
+
+```{r}
+cancel %>%
+  group_by(Year, Month, UniqueCarrier) %>% 
+  tally() %>%
+  ungroup -> dat
+
+dat$Month <- paste(dat$Year,dat$Month,"01",sep="-" )
+
+streamgraph(dat, "UniqueCarrier", "n", "Month") %>%
+  sg_fill_brewer("Spectral")
+```
+
+This streamgraph maps the number of cancellations by carrier. This Stream Graph seems to confirm many of the facts that we noticed from the months by cancellations treemap. Most cancellations happen in the month of January followed by the month of December as there are large spikes in January 1999, January 2000, and December 2000. I will specifically further explore the months of January 1999, January 2000, and December 2000 next as these month had major snowstorms according to historical weather data. The least number of cancellations happen in the months of April and November. In general, most cancellations are from US Airways, United Airlines, and Delta. There is an interesting increase in the number of cancellations in United Airlines (UA) between May 2000 and August 2000 (much higher than other months). This may be an interesting time for the business as this trend is unexplicable. In general, Southwest (WN), T'Way Air (TW), Northwest Airlines (NW), Hawaii Pacific Airlines (HP), and Alaska Airlines (AS) all seem to have relatively the same proportion of cancellations throughout the entire data set with very few small spikes. 
+
+###Interesting peaks in Januray 1999
+
+```{r}
+jan2000 <- cancel[cancel$Year == 1999 & cancel$Month == 1,]
+
+jan2000 %>%
+  group_by(DayofMonth, UniqueCarrier) %>% 
+  tally() %>%
+  ungroup -> groupjan2000
+
+groupjan2000$DayofMonth <- paste("2000","1",groupjan2000$DayofMonth,sep="-" )
+
+streamgraph(groupjan2000, "UniqueCarrier", "n", "DayofMonth") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "day", tick_interval = 1, tick_format = "%d")
+```
+
+During the month of January 1999, there is a huge spike in the number of cancellations on January 2nd. There were many cancellations from American Airlines (508), United Airlines (462), NorthWest Airlines (446), Delta (351), and US Airways (236) on this day. By looking at historical weather data, I notice that there was a major snowstorm that struck the American Midwest (Milwakee and Chicago). There are also smaller spikes on January 8th, 14th, and 22nd. Historical data demonstrates that there was a major snowstorm that struck the New England area on January 14th (Toronto needed military assistance to remove snow). 
+
+###Interesting peaks in Januray 2000
+
+```{r}
+jan2000 <- cancel[cancel$Year == 2000 & cancel$Month == 1,]
+
+jan2000 %>%
+  group_by(DayofMonth, UniqueCarrier) %>% 
+  tally() %>%
+  ungroup -> groupjan2000
+
+groupjan2000$DayofMonth <- paste("2000","1",groupjan2000$DayofMonth,sep="-" )
+
+streamgraph(groupjan2000, "UniqueCarrier", "n", "DayofMonth") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "day", tick_interval = 1, tick_format = "%d")
+```
+
+There is a huge spike in the number of delays on January 25th, 2000. 1377 US Airways flights were cancelled, 689 Delta flights, and 586 American Airlines flights were cancelled on this particular day. There was probably a very large snow storm on this day. According to a Wikipedia article, there was a particular powerful and surprise snowstorm that struck North Carolina and Virginia on this day. There was over 20 inches of snow at the airport at Raleigh, NC alone probably causing many of the cancellations notes in this stream graph. We can also see this in the Stream graph that shows number of cancellations by state and month. During January of 2000 there were 1595 flights cancelled from North Carolina and 1839 flights were cancelled from Virginia, both of which are much higher than usual for those states during other months. 
+
+###Interesting peaks in December 2000
+
+```{r}
+dec2000 <- cancel[cancel$Year == 2000 & cancel$Month == 12,]
+
+dec2000 %>%
+  group_by(DayofMonth, UniqueCarrier) %>% 
+  tally() %>%
+  ungroup -> groupdec2000
+
+groupdec2000$DayofMonth <- paste("2000","1",groupdec2000$DayofMonth,sep="-" )
+
+streamgraph(groupdec2000, "UniqueCarrier", "n", "DayofMonth") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "day", tick_interval = 1, tick_format = "%d")
+```
+
+There is a huge spike in the number of delays on December 11th-13th, 2000 and a large spike on the 30th of December. There was probably a very large snow storm on these days. There is not much of an explanation for the large spike from december 11th to the 13th, however, a large nor'easter struck the east coast of the United States on December 30th 2000 causing many cancellations at airports. Delta (DL) had a particularly large number of cancellations (672 cancellations) on December 30th. 
+
+#### package prepare
+
+```{r}
+
+inst_pkgs = load_pkgs =  c("streamR","ROAuth","maps","map_data",
+                           "ggplot2", "grid","scales")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+plot.tweets = function(map, points, vals){
+  # Initialize ggplot object with map data
+  mapd = ggplot(map) +
+    # Add the map data
+    geom_map(aes(map_id = region), map = map, fill = "white", color = "grey20", size = 0.25) + 
+    # Set map limits
+    expand_limits(x = map$long, y = map$lat) + 
+    # Add a theme  
+    theme(axis.line = element_blank(), axis.text = element_blank(), axis.ticks = element_blank(), 
+          axis.title = element_blank(), panel.background = element_blank(), panel.border = element_blank(), 
+          panel.grid.major = element_blank(), plot.background = element_blank(), 
+          plot.margin = unit(0 * c(-1.5, -1.5, -1.5, -1.5), "lines")) + 
+    
+    # Add points
+    geom_point(data = points, aes(x = x, y = y), size = 3, alpha = 1/5, color = vals)
+  
+  # Graph ggplot2 object
+  print(mapd)
+}
+```
+
+
+```{r}
+comb %>%
+  group_by(Origin) %>% 
+  tally() -> city
+
+cities <- merge(city,airports, by.x = "Origin", "iata")[,c("long", "lat", "n")]
+
+cs<- cities[order(cities$n,decreasing = T),]
+
+names(cs) <- c("x","y","z")
+
+locs <- cs[,1:2]
+values <- cs$z
+
+usa.map.data = map_data("usa")
+
+# Calling the function to plot the data
+plot.tweets(usa.map.data, locs, values)
+
+```
+
+##References
+
+- http://www.airfarewatchdog.com/pages/3799702/airline-letter-codes/
+
+- http://www.onthisday.com/
+
+- https://en.wikipedia.org/wiki/January_2000_North_American_blizzard
+
+- https://en.wikipedia.org/wiki/December_2000_nor%27easter

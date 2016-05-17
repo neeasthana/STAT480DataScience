@@ -1,0 +1,131 @@
+---
+title: "plane2"
+output: html_document
+---
+
+```{r}
+setwd("/home/student/container-data/project")
+#load('air.RDdata')
+#air <- as.data.frame(air)
+load('alldatadelay.RDdata')
+alldata <- as.data.frame(alldata)
+```
+
+
+#### generate new variables, if the flight delayed or not
+
+```{r}
+#alldata$Delay = ifelse(alldata$ArrDelay > 0, 1, 0)
+#save(alldata, file = 'alldatadelay.RDdata')
+```
+
+
+###pacakge preparing 
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE, results='hide'}
+installIfNeeded = function(cliblist){
+  libsNeeded = cliblist
+  libsNeeded = libsNeeded[!(libsNeeded %in% installed.packages()[,"Package"])]
+  if(length(libsNeeded)>0) install.packages(libsNeeded)
+}
+
+installIfNeeded("treemap")
+
+# load the treemap package
+library('treemap')
+
+# Any package that is required by the script below is given here:
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+
+git_pkgs = git_pkgs[!(git_pkgs %in% installed.packages()[,"Package"])]
+
+if(length(git_pkgs)){
+  library(devtools)
+  install_github('rstudio/DT')
+  install_github('hrbrmstr/streamgraph')
+}
+
+load_pkgs = c(load_pkgs, git_pkgs_load)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+
+# Any package that is required by the script below is given here:
+inst_pkgs = load_pkgs =  c("circlize")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+# Chord graphs are fantastic at showing the links or relationships that exist between categories.
+circos.clear()
+
+
+```
+
+
+### for two years 1999-2000
+
+```{r}
+
+plane <- alldata[,c("ArrDelay","engine_type","model","aircraft_type","Delay","issue_date")]
+treemap(plane,
+        index=c("model"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")
+```
+
+####if we are using propotion
+
+```{r}
+count <- table(plane$model) 
+delaycount <- table(plane[plane$ArrDelay > 0, "model"]) # delay count for each engine
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+delayprop <- delayprop[which(delayprop$Freq < 1000000),]
+names(delayprop)[1] <- 'model'
+sortedelayprop <- delayprop[order(delayprop$Freq, decreasing = T),]
+sortedelayprop
+
+summary(sortedelayprop$Freq)
+
+
+#delay rate
+treemap(delayprop,
+        index=c("model"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")
+
+##Delay time length
+treemap(plane[plane$ArrDelay > 0,],
+        index=c("model"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+
+#average delay time for each engine_type
+DTsum <- aggregate(ArrDelay ~ model, plane[plane$ArrDelay > 0,], sum)
+DTsum[2] <- DTsum[2]/count
+DTsum <- DTsum[which(DTsum$ArrDelay < 1000000),]
+
+sortedDTsum <- DTsum[order(DTsum$ArrDelay,decreasing = T),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("model"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+
+```
+
+

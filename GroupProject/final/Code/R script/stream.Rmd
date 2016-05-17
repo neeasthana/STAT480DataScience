@@ -1,0 +1,195 @@
+---
+title: "stream for weather"
+output: html_document
+---
+
+prepare data
+```{r}
+setwd("/home/student/container-data/project")
+load('new.RDdata')
+alldata <- as.data.frame(alldata)
+alldata$date <- paste(alldata$Year, alldata$Month, alldata$DayofMonth, sep = '-')
+alldata$date <- as.Date(alldata$date, "%Y-%m-%d")
+head(alldata)
+```
+
+packages
+
+```{r}
+
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+
+git_pkgs = git_pkgs[!(git_pkgs %in% installed.packages()[,"Package"])]
+
+if(length(git_pkgs)){
+  library(devtools)
+  install_github('rstudio/DT')
+  install_github('hrbrmstr/streamgraph')
+}
+
+load_pkgs = c(load_pkgs, git_pkgs_load)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+```
+
+
+
+
+no need
+```{r}
+
+stateplot <- function(stateabb, month) {
+  streamdata <- alldata[which(alldata$Month == month ),c("state","city","airport","date","ArrDelay","Delay","Year")]
+streamdata <- streamdata[which(streamdata$Year==2000),]
+ streamdata <-streamdata[which(streamdata$state == stateabb),]
+ data <- aggregate(ArrDelay ~ date+state, streamdata, sum)
+ dataave <- aggregate(ArrDelay ~ date+state, streamdata, mean)
+ count <- aggregate(Delay ~ date+state, streamdata, sum)
+ countave <- aggregate(Delay ~ date+state, streamdata, mean)
+ plot(data$date, data$ArrDelay,type = 'h', main = stateabb,xlab = "arrdelay time ")
+ plot(dataave$date, dataave$ArrDelay,type = 'h', main = stateabb, xlab = "arrdelay average")
+ plot(count$date, count$Delay, type = 'h', main = stateabb,xlab = "delay count ")
+ plot(count$date, count$Delay,type = 'h', main = stateabb,xlab = "Delay rate")
+}
+
+stateplot('MI',1)
+stateplot('MD',1)
+stateplot('IL',1)
+stateplot('IN',1)
+stateplot('WA',1)
+stateplot('OH',1)
+stateplot('WI',1)
+stateplot('TX',1)
+stateplot('FL',1)
+stateplot('MD',12)
+stateplot('CA',1)
+stateplot00 <- function(stateabb, month) {
+  streamdata <- alldata[which(alldata$Month == month ),c("state","city","airport","date","ArrDelay","Delay","Year")]
+streamdata <- streamdata[which(streamdata$Year==2000),]
+ streamdata <-streamdata[which(streamdata$state == stateabb),]
+  plot(streamdata$date, streamdata$Delay,type = 'h', main = stateabb)
+}
+
+stateplot00('CA',1)
+```
+
+new part 
+### for year 1999
+
+```{r}
+#### Streamgraph
+library(streamgraph)
+#### year 1999
+firyear = alldata[which(alldata$Year == 1999 & alldata$state %in% c("OH","WI","IL","IN","MI","ML","IO","MD","WA","WI","HI","CA","DC")),]
+firyear$Month = firyear$date
+data = aggregate(ArrDelay ~ Month + state, firyear, sum)
+dataave <- aggregate(ArrDelay ~ Month + state, firyear, mean)
+streamgraph(data, "state", "ArrDelay","Month", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("Month")
+streamgraph(dataave, "state", "ArrDelay","Month", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("Month")
+
+#### jan 1999
+
+firyear = alldata[which(alldata$Year == 1999 & alldata$Month==1 & alldata$state %in% 
+c("OH","WI","IL","IN","MI","ML","IO","MD","WA","WI","HI","CA","DC")),]
+firyear$Day = firyear$date
+data = aggregate(ArrDelay ~ Day + state, firyear, sum)
+dataave <- aggregate(ArrDelay ~ Day + state, firyear, mean)
+
+streamgraph(data, "state", "ArrDelay","Day", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("Day")
+streamgraph(dataave, "state", "ArrDelay","Day", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("Day")
+```
+
+###year 2000
+
+```{r}
+#### Streamgraph
+library(streamgraph)
+#### year 2000
+firyear = alldata[which(alldata$Year == 2000 & alldata$state %in% c("OH","WI","IL","IN","MI","ML","IO","MD","WA","WI","HI","CA","DC")),]
+firyear$Month = firyear$date
+data = aggregate(ArrDelay ~ Month + state, firyear, sum)
+dataave <- aggregate(ArrDelay ~ Month + state, firyear, mean)
+streamgraph(data, "state", "ArrDelay","Month", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("Month")
+streamgraph(dataave, "state", "ArrDelay","Month", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("Month")
+
+#### jan 2000
+#### for each month
+
+firyear = alldata[which(alldata$Year == 2000 & alldata$state %in% 
+c("OH","WI","IL","IN","MI","ML","IO","MD","WA","WI","HI","CA","DC")),]
+
+data = aggregate(ArrDelay ~ Day + Month, firyear, sum)
+
+data$newday <- as.numeric(new[(1:length(new))%%3 == 0])
+head(data)
+data$Day <- paste(1999,1,data$newday,sep= '-')
+dataave <- aggregate(ArrDelay ~ Day + Month, firyear, mean)
+
+####darren
+alldata %>%
+  select(Month, DayofMonth, ArrDelay ) %>%
+  tidyr::gather(Month, ArrDelay, -year) %>% #ignore year when group by genre # tidyr is the library name
+  group_by(DayofMonth) %>%
+  tally(wt=value) %>%
+  ungroup -> dat
+
+
+###
+streamgraph(data, "Month", "ArrDelay","Day", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr")%>%
+  sg_axis_x("Day")
+  
+streamgraph(dataave, "state", "ArrDelay","Day", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("Day")
+```
+
+
+no need anymore
+
+```{r}
+streamdata <- alldata[which(alldata$Month == 1 ),c("state","city","airport","date","ArrDelay","Delay","Year")]
+streamdata <- streamdata[which(streamdata$Year==1999),]
+streamdata <- streamdata[which(streamdata$state %in% 
+                          c("OH","WI","IL","IN","MI","ML","IO","MD","WA","WI","HI","CA","DC")),]
+data <- aggregate(ArrDelay ~ date+state, streamdata, sum)
+dataave <- aggregate(ArrDelay ~ date+state, streamdata, mean)
+count <- aggregate(Delay ~ date+state, streamdata, sum)
+countave <- aggregate(Delay ~ date+state, streamdata, mean)
+library(streamgraph)
+streamgraph(data, "state", "ArrDelay","date", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("date", "%d")
+
+streamgraph(dataave, "state", "ArrDelay","date", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("date", "%d")
+
+streamgraph(count, "state", "Delay","date", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("date", "%d")
+
+streamgraph(countave, "state", "Delay","date", interactive=TRUE)%>%
+  sg_fill_brewer("PuOr") %>%
+  sg_axis_x("date", "%d")
+
+```
+

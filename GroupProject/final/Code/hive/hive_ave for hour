@@ -1,0 +1,15 @@
+DROP VIEW IF EXISTS airhour;
+
+CREATE VIEW airhour (airhour, arrdelay)
+AS
+SELECT FLOOR(crsdeptime/100), arrdelay
+
+FROM airlines
+WHERE arrdelay > 0;
+
+SELECT * FROM airhour LIMIT 10;
+
+SELECT airhour, AVG(arrdelay) AS average FROM airhour
+GROUP BY airhour
+SORT BY average;
+

@@ -1,0 +1,581 @@
+---
+title: "Wendy"
+output: html_document
+---
+
+```{r}
+library('data.table')
+
+# Set working directory to the directory containing this file and the AirlineDelays directory.
+#setwd("/Users/wanxinbai/Documents/480-data science foundation/project/airlines")
+setwd("/home/student/container-data/project")
+
+## you can use fread first and then save the data as a RDdata, so you can just load data everytime you need it.
+
+#air = fread('airlines.csv')
+#save(air, file = 'air.RDdata')
+load('air.RDdata')
+
+#read in airports dataset and merge with origin airports
+#airports <- read.csv("airports.csv")
+
+#read for merging with destination airports
+#dairports <- read.csv("airports.csv")
+#names(dairports) <- c("diata","dairport", "dcity","dstate", "dcountry", "dlat", "dlong")
+
+#merge origin airports
+#PortLine <- merge(air, airports, by.x = 'Origin', by.y = 'iata')
+
+#merge destination airports
+#TPortLine <- merge (PortLine, dairports,  by.x = 'Dest', by.y = 'diata')
+
+#merge with plane data and get alldata with 11210931 obs and 49 variables
+#library(plyr)
+#plane <- read.csv("plane-data.csv")
+#plane <- rename(plane, c("year" = "plane_year"))
+#alldata <- merge (TPortLine, plane ,by.x = 'TailNum', by.y = 'tailnum', all.x = T)
+#save(alldata, file = 'alldata.RDdata')
+load('alldata.RDdata')
+alldata <- as.data.frame(alldata)
+```
+
+
+```{r}
+##average delay rate for each hour in two years
+#hourdelay <- read.csv("day.csv")
+#head(air)
+#names(hourdelay) <- c("hour","ave_delay")
+#save(hourdelay, file = 'hourdelay.RDdata')
+
+```
+
+
+###pacakge preparing 
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE, results='hide'}
+installIfNeeded = function(cliblist){
+  libsNeeded = cliblist
+  libsNeeded = libsNeeded[!(libsNeeded %in% installed.packages()[,"Package"])]
+  if(length(libsNeeded)>0) install.packages(libsNeeded)
+}
+
+installIfNeeded("treemap")
+
+# load the treemap package
+library('treemap')
+
+# Any package that is required by the script below is given here:
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+
+git_pkgs = git_pkgs[!(git_pkgs %in% installed.packages()[,"Package"])]
+
+if(length(git_pkgs)){
+  library(devtools)
+  install_github('rstudio/DT')
+  install_github('hrbrmstr/streamgraph')
+}
+
+load_pkgs = c(load_pkgs, git_pkgs_load)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+```
+
+### package for circle_diagrams
+
+```{r}
+inst_pkgs = load_pkgs =  c("circlize")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+# Chord graphs are fantastic at showing the links or relationships that exist between categories.
+circos.clear()
+```
+
+
+
+
+#### generate new variables, if the flight delayed or not
+
+```{r}
+alldata$Delay = ifelse(alldata$ArrDelay > 0, 1, 0)
+```
+
+
+### Variable Exploration
+
+#### unique carrier
+
+#### for two years
+
+```{r}
+treemap(air,
+        index=c("UniqueCarrier"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")#actual value or percentage value
+#if we are using propotion
+
+count <- table(air$UniqueCarrier) #flight count for each carrier
+delaycount <- table(air[which(air$Delay == 1)]$UniqueCarrier) # delay count for each carrier
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'UniqueCarrier'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+sortedelayprop
+
+summary(sortedelayprop$Freq)
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("UniqueCarrier"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")#actual value or percentage value
+
+
+treemap(air,
+        index=c("UniqueCarrier"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+#average delay time for each carrier
+DTsum <- aggregate(ArrDelay ~ UniqueCarrier, air[which(air$ArrDelay > 0)], sum)
+DTsum[2] <- DTsum[2]/count
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("UniqueCarrier"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+```
+
+
+####For year 1999
+
+```{r}
+air99 = air[Year == 1999, ]
+treemap(air99,
+        index=c("UniqueCarrier"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")#actual value or percentage value
+#if we are using propotion
+
+count <- table(air99$UniqueCarrier) #flight count for each carrier
+delaycount <- table(air99[which(air99$Delay == 1)]$UniqueCarrier) # delay count for each carrier
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'UniqueCarrier'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+sortedelayprop
+
+summary(sortedelayprop$Freq)
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("UniqueCarrier"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")#actual value or percentage value
+
+
+treemap(air99,
+        index=c("UniqueCarrier"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+#average delay time for each carrier
+DTsum <- aggregate(ArrDelay ~ UniqueCarrier, air99[which(air99$ArrDelay > 0)], sum)
+DTsum[2] <- DTsum[2]/count
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("UniqueCarrier"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+```
+
+
+####For year 2000
+
+```{r}
+air00 = air[Year == 2000, ]
+treemap(air00,
+        index=c("UniqueCarrier"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")#actual value or percentage value
+#if we are using propotion
+
+count <- table(air00$UniqueCarrier) #flight count for each carrier
+delaycount <- table(air00[which(air00$Delay == 1)]$UniqueCarrier) # delay count for each carrier
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'UniqueCarrier'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+sortedelayprop
+
+summary(sortedelayprop$Freq)
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("UniqueCarrier"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")#actual value or percentage value
+
+
+treemap(air00,
+        index=c("UniqueCarrier"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+#average delay time for each carrier
+DTsum <- aggregate(ArrDelay ~ UniqueCarrier, air00[which(air00$ArrDelay > 0)], sum)
+DTsum[2] <- DTsum[2]/count
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("UniqueCarrier"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+```
+
+
+##DepDelay & Origin airport
+
+### For two years
+
+```{r}
+treemap(air,
+        index=c("Origin"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")#actual value or percentage value
+#if we are using propotion
+count <- table(air$Origin) #flight count for each origin airport
+delaycount <- table(air[which(air$Delay == 1)]$Origin) # delay count for each origin airport
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'Origin'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+sortedelayprop
+summary(sortedelayprop$Freq)
+
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("Origin"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")#actual value or percentage value
+
+#average delay time for each origin airport
+DTsum <- aggregate(ArrDelay ~ Origin, air[which(air$ArrDelay > 0)], sum)
+DTsum[2] <- DTsum[2]/count
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("Origin"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+```
+
+### For 1999
+
+```{r}
+treemap(air99,
+        index=c("Origin"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")#actual value or percentage value
+#if we are using propotion
+count <- table(air99$Origin) #flight count for each origin airport
+delaycount <- table(air99[which(air99$Delay == 1)]$Origin) # delay count for each origin airport
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'Origin'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+sortedelayprop
+summary(sortedelayprop$Freq)
+
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("Origin"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")#actual value or percentage value
+
+#average delay time for each origin airport
+DTsum <- aggregate(ArrDelay ~ Origin, air99[which(air$ArrDelay > 0)], sum)
+DTsum[2] <- DTsum[2]/count
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("Origin"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+```
+
+### For 2000
+
+```{r}
+treemap(air00,
+        index=c("Dest"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")#actual value or percentage value
+#if we are using propotion
+
+count <- table(air00$Dest) #flight count for each origin airport
+delaycount <- table(air00[which(air00$Delay == 1)]$Dest) # delay count for each origin airport
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'Dest'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+sortedelayprop
+summary(sortedelayprop$Freq)
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("Dest"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")#actual value or percentage value
+
+#average delay time for each origin airport
+DTsum <- aggregate(ArrDelay ~ Dest, air00[which(air00$ArrDelay > 0)], sum)
+DTsum[2] <- DTsum[2]/count
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("Dest"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+```
+
+
+
+###plane information
+
+
+
+###Timeline
+####Year and arrdelay
+
+```{r, eval=FALSE}
+yeardata <- air[,c("Year","Month","ArrDelay")]
+yeardata <- as.data.frame(yeardata)
+yeardata$Year <- as.factor(yeardata$Year)
+yeardata$Month <- as.factor(yeardata$Month)
+
+# Stacked Density Plot
+library(ggplot2)
+ggplot(yeardata, aes(x=ArrDelay)) + xlim(-50,100) +
+  geom_density(aes(group=Year, colour=Year, fill=Year, alpha = 0.4 ), position="stack")
+
+ggplot(yeardata, aes(x=ArrDelay)) + xlim(-50,100) +
+  geom_density(aes(group=Year, colour=Year, fill=Year, alpha = 0.4 ))
+
+```
+ 
+Almost symetric between 0, but thicker  tails  when arrdelay > 0. And almost the same for two years.
+
+```{r, eval=FALSE}
+ggplot(yeardata, aes(x=ArrDelay)) + xlim(-50,50) +
+  geom_density(aes(group=Month, colour=Month, fill=Month, alpha = 0.4 ), position = "stack")
+
+```
+
+
+#DepDelay for each month
+
+```{r, eval =FALSE}
+
+library(foreach)
+library(streamgraph)
+
+yeardata <- as.data.frame(yeardata)
+data <- aggregate(ArrDelay ~ Year + Month, yeardata[yeardata$ArrDelay > 0,], sum)
+data$Month <- paste("2012",data$Month,"01",sep = '-')
+# years <- split(1:nrow(x), air[,"Year"])
+months <- split(1:nrow(air), air[,"Month"])
+# DOMs <- split(1:nrow(x), x[,"DayofMonth"]) 
+# DOWs <- split(1:nrow(x), x[,"DayOfWeek"])
+# origin <- split(1:nrow(x), x[,"Origin"])
+gyear <- group_by(yeardata, Year, Month)
+gyear <- ungroup(gyear)
+streamgraph(data, "Year", "ArrDelay", "Month", interactive=TRUE) %>%
+  sg_fill_brewer("PuOr")
+
+#sg_axis_x(1, "Month", "%M") %>%
+
+streamgraph(data, "Year", "ArrDelay", "Month") %>%
+  sg_fill_brewer("Spectral") %>%
+  sg_axis_x(tick_units = "Month", tick_interval = 1)
+
+
+
+numflights <- foreach(month = months, .combine = cbind) %do% {
+  flights <- air[month,]
+  count99 <- length(which(flights[,"Year"] == "1999"))
+  count00 <- length(which(flights[,"Year"] == "2000"))
+  rbind(count99, count00)
+}
+dq <- melt(numflights)
+names(dq) <- c("year", "month", "count")
+# conver month column to date format for streamgraph
+dq$month <- paste("2012", dq$month, "01", sep = "-")
+
+
+streamgraph(dq, "", "count","month", interactive=TRUE)
+
+
+
+```
+
+
+
+```{r, eval=FALSE}
+treemap(air,
+        index=c("Month"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")#actual value or percentage value
+#if we are using propotion
+streamgraph(air, "Year","ArrDelay", "Month", interactive=TRUE) %>%
+  sg_axis_x("Month", "%Y") %>%
+  sg_fill_brewer("PuOr")
+
+
+count <- table(air$Month) #flight count for each month
+delaycount <- table(air[which(air$Delay == 1)]$Month) # delay count for each month
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'Month'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+summary(sortedelayprop$Freq)
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("Month"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")#actual value or percentage value
+
+#average delay time for each origin airport
+DTsum <- aggregate(ArrDelay ~ Dest, air[which(air$ArrDelay > 0)], sum)
+DTsum[2] <- DTsum[2]/count
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("Dest"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+```
+
+
+
+###numerica variables
+
+```{r,eval = FALSE}
+pairs(air[,c("CRSDepTime","CRSArrTime","ActualElapsedTime","CRSElapsedTime","AirTime","ArrDelay","DepDelay","Distance", "TaxiIn","TaxiOut")],pch = ".")
+```
+
+
+```{r, eval=FALSE}
+pairs(air[,c("CRSDepTime","CRSArrTime","ArrDelay","DepDelay")],pch = ".")
+pairs(air[,c("ActualElapsedTime","CRSElapsedTime","ArrDelay","DepDelay")],pch = ".")
+pairs(air[,c("AirTime","ArrDelay","DepDelay","Distance")],pch = ".")
+pairs(air[,c("ArrDelay","DepDelay", "TaxiIn","TaxiOut")],pch = ".")
+```
+
+
+
+### AirTime and Distance with Delay
+
+```{r}
+library(ggplot2)
+noair <- na.omit(air[,c("Delay","Distance","AirTime","ArrDelay")])
+x_axis = "Delay"
+y_axis = "Distance"
+color  = "AirTime"
+ggplot(noair, aes_string(x=x_axis, y=y_axis, color=color)) +
+  geom_point(position=position_jitter(w=0.0, h=0.4)) +
+  theme_light(base_size=20) +
+  xlab("Delay Or Not") +
+  ylab("Distance ") +
+  scale_colour_gradientn("AirTime", colours=c("#5e4fa2", "#3288bd", "#66c2a5", "#abdda4", "#e6f598", "#fee08b", "#fdae61", "#f46d43", "#d53e4f", "#9e0142")) +
+  ggtitle("Airtime and Distance") +
+  theme(plot.title=element_text(size=18))
+```
+
+
+### AirTime and Distance with delaytime
+
+```{r}
+x_axis = "AirTime"
+y_axis = "Distance"
+color  = "ArrDelay"
+ggplot(noair, aes_string(x=x_axis, y=y_axis, color=color)) +
+  geom_point(position=position_jitter(w=0.0, h=0.4)) +
+  theme_light(base_size=20) +
+  xlab("AirTime") +
+  ylab("Distance ") +
+  scale_colour_gradientn("ArrDelay", colours=c("#5e4fa2", "#3288bd", "#66c2a5", "#abdda4", "#e6f598", "#fee08b", "#fdae61", "#f46d43", "#d53e4f", "#9e0142")) +
+  ggtitle("Airtime and Distance") +
+  theme(plot.title=element_text(size=18))
+```
+
+
+#top_n(10, n)
+
+
+

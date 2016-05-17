@@ -1,0 +1,78 @@
+---
+title: "mapdata"
+output: html_document
+author: Wanxin 
+---
+
+#### package prepare
+
+```{r}
+
+inst_pkgs = load_pkgs =  c("streamR","ROAuth","maps","map_data",
+                           "ggplot2", "grid","scales")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+```
+
+
+####define function
+
+```{r}
+###### add color varibles
+plot.tweets = function(map, points, value){
+  # Initialize ggplot object with map data
+  mapd = ggplot(map) +
+    # Add the map data  #REGION variable, 
+    geom_map(aes(map_id = region), map = map, fill = "white", color = "grey20", size = 0.25) + 
+    scale_fill_continuous(guide = "legend")+
+    # Set map limits
+    expand_limits(x = map$long, y = map$lat) + 
+    # Add a theme  
+    theme(axis.line = element_blank(), axis.text = element_blank(), axis.ticks = element_blank(), 
+          axis.title = element_blank(), panel.background = element_blank(), panel.border = element_blank(), 
+          panel.grid.major = element_blank(), plot.background = element_blank(), 
+          plot.margin = unit(0 * c(-1.5, -1.5, -1.5, -1.5), "lines")) + 
+    
+    # Add points  #geom_map
+    geom_point(data = points, aes(x = x, y = y), size = 3, alpha = 1/5, color = value )
+  
+  # Graph ggplot2 object
+  print(mapd)
+}
+
+```
+
+
+
+#### set parameters
+
+
+#### load airlines data
+
+```{r}
+
+setwd("/home/student/container-data/project")
+load('alldata.RDdata')
+alldata <- as.data.frame(alldata)
+
+locdata <- alldata[which(alldata$ArrDelay>0),c("ArrDelay","city","state","country","lat","long")]
+topdelay<- locdata[order(locdata$ArrDelay,decreasing = T),]
+topsort <- topdelay [1:100, c("long","lat","ArrDelay")]
+
+names(topsort) <- c("x","y","z")
+points = na.omit(topsort)
+points2 =  points[, 1:2]
+
+###color =  arrdelay
+value  = points[,3]
+
+usa.map.data = map_data("usa")
+
+# Calling the function to plot the data
+plot.tweets(usa.map.data, points2, value)
+
+```

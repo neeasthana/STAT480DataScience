@@ -1,0 +1,7 @@
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
+  -files /home/host-data/STAT480DataScience/GroupProject/mean_cancellation_map.py,\
+/home/host-data/STAT480DataScience/GroupProject/mean_cancellation_reduce.py \
+  -input airlines.csv \
+  -output outputs/mean_cancellations \
+  -mapper "/home/host-data/STAT480DataScience/HW5/mean_cancellation_map.py" \
+  -reducer "/home/host-data/STAT480DataScience/HW5/mean_cancellation_reduce.py"

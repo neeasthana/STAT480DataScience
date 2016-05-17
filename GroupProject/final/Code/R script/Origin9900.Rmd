@@ -1,0 +1,100 @@
+---
+title: "origin"
+output: html_document
+---
+
+```{r}
+setwd("/home/student/container-data/project")
+load('air.RDdata')
+```
+
+
+
+###pacakge preparing 
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE, results='hide'}
+installIfNeeded = function(cliblist){
+  libsNeeded = cliblist
+  libsNeeded = libsNeeded[!(libsNeeded %in% installed.packages()[,"Package"])]
+  if(length(libsNeeded)>0) install.packages(libsNeeded)
+}
+
+installIfNeeded("treemap")
+
+# load the treemap package
+library('treemap')
+
+# Any package that is required by the script below is given here:
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+
+git_pkgs = git_pkgs[!(git_pkgs %in% installed.packages()[,"Package"])]
+
+if(length(git_pkgs)){
+  library(devtools)
+  install_github('rstudio/DT')
+  install_github('hrbrmstr/streamgraph')
+}
+
+load_pkgs = c(load_pkgs, git_pkgs_load)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+```
+
+#### generate new variables, if the flight delayed or not
+
+```{r}
+air$Delay = ifelse(air$ArrDelay > 0, 1, 0)
+```
+
+
+##DepDelay & Origin airport
+
+### For two years
+
+```{r}
+treemap(air,
+        index=c("Origin"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")#actual value or percentage value
+#if we are using propotion
+count <- table(air$Origin) #flight count for each origin airport
+delaycount <- table(air[which(air$Delay == 1),]$Origin) # delay count for each origin airport
+delayprop <- delaycount/count
+delayprop90 <- as.data.frame(delayprop)
+names(delayprop90)[1] <- 'Origin'
+names(delayprop90)[2] <- 'freq90'
+sortedelayprop <- delayprop[order(delayprop$Freq,decreasing = T),]
+sortedelayprop
+summary(sortedelayprop$Freq)
+
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("Origin"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")#actual value or percentage value
+
+#average delay time for each origin airport
+DTsum <- aggregate(ArrDelay ~ Origin, air[which(air$ArrDelay > 0)], sum)
+DTsum[2] <- DTsum[2]/count
+sortedDTsum <- DTsum[order(DTsum$ArrDelay,decreasing = T),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("Origin"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+```
+

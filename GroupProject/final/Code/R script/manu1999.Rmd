@@ -1,0 +1,142 @@
+---
+title: "manufacturer1999"
+output: html_document
+---
+```{r}
+setwd("/home/student/container-data/project")
+#load('air.RDdata')
+#air <- as.data.frame(air)
+load('alldata.RDdata')
+alldata <- as.data.frame(alldata)
+```
+
+
+#### generate new variables, if the flight delayed or not
+
+```{r}
+alldata$Delay = ifelse(alldata$ArrDelay > 0, 1, 0)
+```
+
+
+###pacakge preparing 
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE, results='hide'}
+library('bit64')
+installIfNeeded = function(cliblist){
+  libsNeeded = cliblist
+  libsNeeded = libsNeeded[!(libsNeeded %in% installed.packages()[,"Package"])]
+  if(length(libsNeeded)>0) install.packages(libsNeeded)
+}
+
+installIfNeeded("treemap")
+
+# load the treemap package
+library('treemap')
+
+# Any package that is required by the script below is given here:
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+
+git_pkgs = git_pkgs[!(git_pkgs %in% installed.packages()[,"Package"])]
+
+if(length(git_pkgs)){
+  library(devtools)
+  install_github('rstudio/DT')
+  install_github('hrbrmstr/streamgraph')
+}
+
+load_pkgs = c(load_pkgs, git_pkgs_load)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+```
+
+
+####For year 1999
+
+The following part is the same analysis for individual year to figure out the change in patterns.
+
+```{r}
+alldata99 = alldata[alldata$Year == 1999, ]
+treemap(alldata99,
+        index=c("manufacturer"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")
+
+```
+
+For the total delay numbers, 1999 keep the same with two years pattern.
+
+
+#### if we are using propotion
+
+```{r}
+count <- table(alldata99$manufacturer) #flight count for each manufacturer
+delaycount <- table(alldata99[alldata99$Delay == 1,"manufacturer"]) # delay count for each manufacturer
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'manufacturer'
+sortedelayprop <- delayprop[order(delayprop$Freq,decreasing = T),]
+sortedelayprop[sortedelayprop$Freq != 'NaN',]
+```
+
+AEROSPATIALE had a higher delay rate in 1999, AIRBUS INDUSTRIE had a low delay rate in 1999 and the other several had similar performance. Especially for those low delay rate companies, they had pretty stable performance.
+
+```{r}
+summary(sortedelayprop$Freq)
+```
+
+And the summary for delay rate did not have big changes.
+
+# The treemap for delay rate for each manufacture.
+
+```{r}
+treemap(delayprop,
+        index=c("manufacturer"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")#actual value or percentage value
+```
+
+
+
+```{r}
+treemap(alldata99,
+        index=c("manufacturer"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+```
+
+The total delay time did not change a lot for these manufacturers.
+
+###average delay time for each carrier
+
+```{r}
+DTsum <- aggregate(ArrDelay ~ manufacturer, alldata99[which(alldata99$ArrDelay > 0),], sum)
+DTsum[2] <- DTsum[2]/count
+DTsum <- DTsum[DTsum$ArrDelay <  100000,]
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+```
+
+No big changes for the rank of average delay rate for each manufacturers and still had some extremely high delay time for several companies.
+
+
+```{r}
+treemap(DTsum,
+        index=c("manufacturer"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+
+```
+
+
+

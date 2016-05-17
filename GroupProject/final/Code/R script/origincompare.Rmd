@@ -1,0 +1,64 @@
+---
+title: "origin compare"
+output: html_document
+---
+
+```{r}
+setwd("/home/student/container-data/project")
+load('air.RDdata')
+air$Delay = ifelse(air$ArrDelay > 15, 1, 0)
+air00 = air[air$Year == 2000, ]
+air99 = air[air$Year == 1999, ]
+```
+
+
+```{r}
+
+ave00 = aggregate(ArrDelay ~ Origin,data = air00, mean)
+rate00 = aggregate(Delay ~ Origin,data = air00, mean)
+
+ave99 = aggregate(ArrDelay ~ Origin,data = air99, mean)
+rate99 = aggregate(Delay ~ Origin,data = air99, mean)
+
+rate = merge(rate99, rate00, by = 'Origin')
+library(plyr)
+rate <- rename(rate, c("Delay.x" = "Delay99"))
+rate <- rename(rate, c("Delay.y" = "Delay00"))
+rate$diff = (rate$Delay00-rate$Delay99)*100
+sort_rate =  rate[(order(abs(rate$diff),decreasing = T)),]
+sort_rate =  rate[abs(order(rate$Delay99,decreasing = T)),]
+
+sort_rate$ave =0.5*(sort_rate$Delay00+sort_rate$Delay99)
+sort_rate[sort_rate$Origin == 'ATL',]
+sort_rate[1:50,]
+
+```
+
+
+
+
+```{r}
+dave00 = aggregate(ArrDelay ~ Dest,data = air00, mean)
+drate00 = aggregate(Delay ~ Dest,data = air00, mean)
+
+dave99 = aggregate(ArrDelay ~ Dest,data = air99, mean)
+drate99 = aggregate(Delay ~ Dest,data = air99, mean)
+
+```
+
+
+
+```{r}
+ave00
+ave99
+
+```
+
+
+
+```{r}
+rate99
+rate00
+```
+
+

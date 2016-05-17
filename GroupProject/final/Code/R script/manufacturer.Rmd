@@ -1,0 +1,260 @@
+---
+title: "manufacturer1999-2000"
+output: html_document
+author: Wanxin Bai
+---
+
+```{r}
+setwd("/home/student/container-data/project")
+#load('air.RDdata')
+#air <- as.data.frame(air)
+load('alldata.RDdata')
+alldata <- as.data.frame(alldata)
+```
+
+
+#### generate new variables, if the flight delayed or not
+
+```{r}
+alldata$Delay = ifelse(alldata$ArrDelay > 0, 1, 0)
+```
+
+
+###pacakge preparing 
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE, results='hide'}
+library('bit64')
+installIfNeeded = function(cliblist){
+  libsNeeded = cliblist
+  libsNeeded = libsNeeded[!(libsNeeded %in% installed.packages()[,"Package"])]
+  if(length(libsNeeded)>0) install.packages(libsNeeded)
+}
+
+installIfNeeded("treemap")
+
+# load the treemap package
+library('treemap')
+
+# Any package that is required by the script below is given here:
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+
+git_pkgs = git_pkgs[!(git_pkgs %in% installed.packages()[,"Package"])]
+
+if(length(git_pkgs)){
+  library(devtools)
+  install_github('rstudio/DT')
+  install_github('hrbrmstr/streamgraph')
+}
+
+load_pkgs = c(load_pkgs, git_pkgs_load)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+```
+
+
+
+
+### Manufacture
+
+#### for two years
+
+```{r}
+treemap(alldata,
+        index=c("manufacturer"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")
+```
+
+BOEING has the highest total number of delay flights.
+
+####if we are using propotion
+
+```{r}
+count <- table(alldata$manufacturer) #flight count for each manufacturer
+delaycount <- table(alldata[which(alldata$Delay == 1),"manufacturer"]) # delay count for each manufacturer
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'manufacturer'
+sortedelayprop <- delayprop[order(delayprop$Freq,decreasing = T),]
+sortedelayprop[sortedelayprop$Freq != 'NaN',]
+```
+
+The manufacturer with the higher delay rate is BAUMAN RANDY, MORSE GEORGE JR, BOEING, AIRBUS INDUSTRIE and PAIR MIKE E. 
+
+
+
+```{r}
+summary(sortedelayprop$Freq)
+```
+
+The average delay rate is almost 46%. And the max is 53.98% which is Bauman Randy and the minimum value is 36.56% which is Douglas.
+
+The treemap for the delay rate for each manufacturer.
+
+```{r}
+treemap(delayprop,
+        index=c("manufacturer"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")
+```
+
+### The total delay time
+
+```{r}
+treemap(alldata,
+        index=c("manufacturer"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+```
+
+Boeing still has the leading position of total delay time.
+
+####average delay time for each manufacurer
+
+```{r}
+DTsum <- aggregate(ArrDelay ~ manufacturer, alldata[which(alldata$ArrDelay > 0),], sum)
+DTsum[2] <- DTsum[2]/count
+DTsum <- DTsum[DTsum$ArrDelay <100000,]
+sortedDTsum <- DTsum[order(DTsum$ArrDelay, decreasing  = T),]
+sortedDTsum
+count["BOEING"]
+
+```
+
+For the average delay time, BOEING is still the highest delay time, almost the five times to the second company--MCDONNELL DOUGLAS.
+
+```{r}
+summary(sortedDTsum$ArrDelay)
+```
+
+The summary of the average delay time showed that the median of delay time is 15, but the mean of the delay time is 1054min which indicated that some manufacturers has extremely high delay time like Boeing.
+
+```{r}
+treemap(DTsum,
+        index=c("manufacturer"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+
+```
+
+
+
+
+
+
+####For year 1999
+
+The following part is the same analysis for individual year to figure out the change in patterns.
+
+```{r, eval=FALSE}
+alldata99 = alldata[alldata$Year == 1999, ]
+treemap(alldata99,
+        index=c("manufacturer"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")
+
+#if we are using propotion
+count <- table(alldata99$manufacturer) #flight count for each manufacturer
+delaycount <- table(alldata99[alldata99$Delay == 1,"manufacturer"]) # delay count for each manufacturer
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'manufacturer'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+sortedelayprop
+
+summary(sortedelayprop$Freq)
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("manufacturer"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")#actual value or percentage value
+
+treemap(alldata99,
+        index=c("manufacturer"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+#average delay time for each carrier
+DTsum <- aggregate(ArrDelay ~ manufacturer, alldata99[which(alldata99$ArrDelay > 0),], sum)
+DTsum[2] <- DTsum[2]/count
+DTsum <- DTsum[DTsum$ArrDelay <  100000,]
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("manufacturer"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+
+```
+
+
+####For year 2000
+
+```{r,eval=FALSE}
+alldata00 = alldata[alldata$Year == 2000, ]
+treemap(alldata00,
+        index=c("manufacturer"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")
+#if we are using propotion
+
+count <- table(alldata00$manufacturer) #flight count for each carrier
+delaycount <- table(alldata00[which(alldata00$Delay == 1),"manufacturer"]) # delay count for each carrier
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'manufacturer'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+sortedelayprop
+
+summary(sortedelayprop$Freq)
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("manufacturer"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")
+
+
+treemap(alldata00,
+        index=c("manufacturer"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+
+#average delay time for each carrier
+DTsum <- aggregate(ArrDelay ~ manufacturer, alldata00[which(alldata00$ArrDelay > 0),], sum)
+DTsum[2] <- DTsum[2]/count
+DTsum <- DTsum[DTsum$ArrDelay < 100000,]
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("manufacturer"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+
+```
+

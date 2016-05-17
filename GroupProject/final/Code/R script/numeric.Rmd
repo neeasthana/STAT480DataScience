@@ -1,0 +1,31 @@
+---
+title: "numeric"
+output: html_document
+---
+
+```{r}
+setwd("/home/student/container-data/project")
+load('alldata.RDdata')
+alldata <- as.data.frame(alldata)
+```
+
+
+```{r}
+cor (alldata[which(alldata$ArrDelay > 0),c("DepDelay","ArrDelay")])
+pairs(alldata[which(alldata$ArrDelay > 15),c("DepDelay","ArrDelay")], pch = '.')
+```
+
+DepDelay had a high correlation with ArrDelay. Therefore, most ArrDelay were caused by DepDelay. 
+
+```{r}
+cor (alldata[which(alldata$ArrDelay > 0),c("TaxiIn","TaxiOut","ArrDelay")])
+pairs(alldata[which(alldata$ArrDelay > 0),c("TaxiIn","TaxiOut","ArrDelay")], pch = '.')
+
+cor (alldata[which(alldata$ArrDelay > 0),c("Distance","AirTime","ArrDelay")])
+pairs (alldata[which(alldata$ArrDelay > 0),c("Distance","AirTime","ArrDelay")], pch = '.')
+
+cor (alldata[which(alldata$ArrDelay > 0),c("lat","long","ArrDelay")])
+pairs (alldata[which(alldata$ArrDelay > 0),c("lat","long","ArrDelay")], pch = '.')
+
+
+```

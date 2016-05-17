@@ -1,0 +1,191 @@
+---
+title: "city2000"
+output: html_document
+---
+
+
+```{r}
+setwd("/home/student/container-data/project")
+#load('air.RDdata')
+#air <- as.data.frame(air)
+load('new.RDdata')
+alldata <- as.data.frame(alldata)
+```
+
+
+#### generate new variables, if the flight delayed or not
+
+```{r}
+alldata$Delay = ifelse(alldata$ArrDelay > 0, 1, 0)
+```
+
+
+###pacakge preparing 
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE, results='hide'}
+installIfNeeded = function(cliblist){
+  libsNeeded = cliblist
+  libsNeeded = libsNeeded[!(libsNeeded %in% installed.packages()[,"Package"])]
+  if(length(libsNeeded)>0) install.packages(libsNeeded)
+}
+
+installIfNeeded("treemap")
+
+# load the treemap package
+library('treemap')
+
+# Any package that is required by the script below is given here:
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+
+git_pkgs = git_pkgs[!(git_pkgs %in% installed.packages()[,"Package"])]
+
+if(length(git_pkgs)){
+  library(devtools)
+  install_github('rstudio/DT')
+  install_github('hrbrmstr/streamgraph')
+}
+
+load_pkgs = c(load_pkgs, git_pkgs_load)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+
+# Any package that is required by the script below is given here:
+inst_pkgs = load_pkgs =  c("circlize")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+# Chord graphs are fantastic at showing the links or relationships that exist between categories.
+circos.clear()
+
+
+```
+
+
+### for two years 1999-2000
+
+```{r}
+
+locdata00 <- alldata[which(alldata$Year == 2000) ,c("ArrDelay","city","state","country","lat","long","Delay")]
+
+treemap(locdata00,
+        index=c("city"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")
+#these cities have more flights
+#if we are using propotion
+
+count <- table(locdata00$city) 
+delaycount <- table(locdata00[locdata00$ArrDelay > 0, "city"]) # delay count for each city
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+delayprop <- delayprop[which(delayprop$Freq < 1000000),]
+names(delayprop)[1] <- 'city'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+sortedelayprop
+```
+
+The delay rate for each city was highly different.
+
+```{r}
+summary(sortedelayprop$Freq)
+```
+
+
+```{r}
+
+#delay rate
+treemap(delayprop,
+        index=c("city"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")
+
+##Delay time length
+treemap(locdata00[locdata00$ArrDelay > 0,],
+        index=c("city"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+
+#average delay time for each city
+DTsum <- aggregate(ArrDelay ~ city, locdata00[locdata00$ArrDelay > 0,], sum)
+DTsum[2] <- DTsum[2]/count
+DTsum <- DTsum[which(DTsum$ArrDelay < 1000000),]
+
+sortedDTsum <- DTsum[order(DTsum$ArrDelay),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+treemap(DTsum,
+        index=c("city"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+
+```
+
+Nashville had an extremely high average delay time
+
+
+
+
+```{r}
+count <- table(locdata00$city) 
+delaycount <- table(locdata00[locdata00$ArrDelay > 0, "city"]) # delay count for each city
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+delayprop <- delayprop[which(delayprop$Freq < 1000000),]
+names(delayprop)[1] <- 'city'
+sortedelayprop <- delayprop[order(delayprop$Freq),]
+sortedelayprop
+
+summary(sortedelayprop$Freq)
+```
+
+#### circle_diagrams for top 20 arrdelay
+
+
+```{r}
+alldata00 <- alldata[which(alldata$Year==2000),]
+cirdata <- alldata00[,c("ArrDelay","Dest","Origin","city","dcity","state","dstate")]
+sortcirdata <- cirdata[order(cirdata$ArrDelay,decreasing = FALSE),]
+topsort <- sortcirdata[1:20,]
+
+# Read in the data
+start = topsort$city
+end = topsort$dcity
+start =  as.character(start)
+end = as.character(end)
+# Create Adjacency Matrix
+mat = matrix(0, nrow = length(unique(start)),
+                ncol = length(unique(end))
+             )
+
+rownames(mat) = unique(start)
+colnames(mat) = unique(end)
+
+for(i in seq_along(start)) 
+  mat[start[i], end[i]] = 1
+
+# Let's have the labels 
+labels = union(start, end)
+# Adding direction (e.g. migration density from starting to ending major)
+# Note: The direction shown is always from rows to columns.
+chordDiagram(mat, order = labels, directional = TRUE)
+circos.clear()
+```
+
+
+
+
+

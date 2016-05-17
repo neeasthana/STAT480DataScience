@@ -1,0 +1,5 @@
+DEFINE stat_by_group(X, group_key, ave_field) RETURNS Y{
+  A = GROUP $X by $group_key;
+  $Y = FOREACH A GENERATE group,MAX($X.$ave_field),MIN($X.$ave_field),COUNT($X.$ave_field),AVG($X.$ave_field);
+};
+

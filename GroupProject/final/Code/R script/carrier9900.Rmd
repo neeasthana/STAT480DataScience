@@ -1,0 +1,109 @@
+---
+title: "Carrier"
+output: html_document
+---
+
+```{r}
+setwd("/home/student/container-data/project")
+load('air.RDdata')
+```
+
+
+
+###pacakge preparing 
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE, results='hide'}
+installIfNeeded = function(cliblist){
+  libsNeeded = cliblist
+  libsNeeded = libsNeeded[!(libsNeeded %in% installed.packages()[,"Package"])]
+  if(length(libsNeeded)>0) install.packages(libsNeeded)
+}
+
+installIfNeeded("treemap")
+
+# load the treemap package
+library('treemap')
+
+# Any package that is required by the script below is given here:
+inst_pkgs = load_pkgs =  c("ggplot2","ggplot2movies", "dplyr","babynames","data.table","Rcpp")
+inst_pkgs = inst_pkgs[!(inst_pkgs %in% installed.packages()[,"Package"])]
+if(length(inst_pkgs)) install.packages(inst_pkgs)
+
+git_pkgs = git_pkgs_load = c("streamgraph","DT")
+
+git_pkgs = git_pkgs[!(git_pkgs %in% installed.packages()[,"Package"])]
+
+if(length(git_pkgs)){
+  library(devtools)
+  install_github('rstudio/DT')
+  install_github('hrbrmstr/streamgraph')
+}
+
+load_pkgs = c(load_pkgs, git_pkgs_load)
+
+# Dynamically load packages
+pkgs_loaded = lapply(load_pkgs, require, character.only=T)
+
+```
+
+#### generate new variables, if the flight delayed or not
+
+```{r}
+air$Delay = ifelse(air$ArrDelay > 15, 1, 0)
+```
+
+
+```{r}
+treemap(air,
+        index=c("UniqueCarrier"),
+        vSize="Delay",
+        vColor="Delay",
+        type="value")
+```
+
+
+####if we are using propotion
+
+
+```{r}
+count <- table(air$UniqueCarrier) #flight count for each carrier
+delaycount <- table(air[which(air$Delay == 1)]$UniqueCarrier) # delay count for each carrier
+delayprop <- delaycount/count
+delayprop <- as.data.frame(delayprop)
+names(delayprop)[1] <- 'UniqueCarrier'
+sortedelayprop <- delayprop[order(delayprop$Freq,decreasing = T),]
+sortedelayprop[sortedelayprop$Freq != 'NaN',]
+
+
+summary(sortedelayprop$Freq)
+
+
+#total time of delay
+treemap(delayprop,
+        index=c("UniqueCarrier"),
+        vSize="Freq",
+        vColor="Freq",
+        type="value")
+
+
+treemap(air,
+        index=c("UniqueCarrier"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")
+
+#average delay time for each carrier
+DTsum <- aggregate(ArrDelay ~ UniqueCarrier, air[which(air$ArrDelay > 0)], sum)
+DTsum[2] <- DTsum[2]/count
+sortedDTsum <- DTsum[order(DTsum$ArrDelay, decreasing  = T),]
+sortedDTsum
+summary(sortedDTsum$ArrDelay)
+
+
+treemap(DTsum,
+        index=c("UniqueCarrier"),
+        vSize="ArrDelay",
+        vColor="ArrDelay",
+        type="value")#actual value or percentage value
+
+```
